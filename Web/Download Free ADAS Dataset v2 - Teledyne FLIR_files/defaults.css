@@ -1,0 +1,29 @@
+::-webkit-scrollbar {
+  background-color: var(--scrollbar-color);
+  width: var(--scrollbar-width);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-color);
+  border-radius: var(--scrollbar-width);
+}
+
+* {
+  scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-color);
+  scrollbar-width: var(--scrollbar-width-firefox);
+}
+
+button {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.15;
+  font-size: 100%;
+  margin: 0;
+  outline: none;
+  padding: 0;
+}
+
+input {
+  appearance: none;
+  -webkit-appearance: none;
+}

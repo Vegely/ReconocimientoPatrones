@@ -1,0 +1,47 @@
+// TODO: use require.js
+//
+// set up custom class mappings for bootstrap
+// https://github.com/showdownjs/showdown/wiki/Add-default-classes-for-each-HTML-element
+const classMap = {
+  table: 'table table-striped',
+};
+
+const bindings = Object.keys(classMap).map(key => ({
+  type: 'output',
+  regex: new RegExp(`<${key}(.*)>`, 'g'),
+  replace: `<${key} class="${classMap[key]}" $1>`,
+}));
+
+$(document).ready(() => {
+  // set up carousel
+  // const mainCarousel = document.querySelector('#main-corousel');
+  // const carousel = new bootstrap.Carousel(mainCarousel);
+
+  // load content
+  const readmeTop = $('#readme-top');
+  const readmeTopSource = $('#readme-top-source');
+  readmeTopSource.load('/content/readme-top.md?20220131', () => {
+    const text = readmeTopSource.text();
+    const converter = new showdown.Converter({ tables: true, extensions: [...bindings] });
+    const convertedHtml = converter.makeHtml(text);
+    readmeTop.html(convertedHtml);
+  });
+
+  const readmeBottom = $('#readme-bottom');
+  const readmeBottomSource = $('#readme-bottom-source');
+  readmeBottomSource.load('/content/readme-bottom.md?20220131', () => {
+    const text = readmeBottomSource.text();
+    const converter = new showdown.Converter({ tables: true, extensions: [...bindings] });
+    const convertedHtml = converter.makeHtml(text);
+    readmeBottom.html(convertedHtml);
+  });
+
+  const downloadGuide = $('#download-guide');
+  const downloadGuideSource = $('#download-guide-source');
+  downloadGuideSource.load('/content/download-guide.md?20220131', () => {
+    const text = downloadGuideSource.text();
+    const converter = new showdown.Converter({ tables: true, extensions: [...bindings] });
+    const convertedHtml = converter.makeHtml(text);
+    downloadGuide.html(convertedHtml);
+  });
+});

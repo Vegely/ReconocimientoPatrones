@@ -1,0 +1,167 @@
+/* These styles are intended to override bootstrap's and mimic the look of Conservator
+*/
+h1 {
+  font-family: 'Industry Light';
+  font-size: 24px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 1.21;
+  letter-spacing: 0.48px;
+  text-align: left;
+  color: #171720;
+}
+h2 {
+  font-family: 'Industry Light';
+  font-size: 20px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 1.2;
+  letter-spacing: 0.4px;
+  text-align: left;
+  color: #171720;
+}
+h3 {
+  font-family: 'Industry Light';
+  font-size: 16px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 1.19;
+  letter-spacing: 0.32px;
+  text-align: left;
+  color: #171720;
+}
+h4 {
+  font-family: 'Industry Light';
+  font-size: 14px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 1.21;
+  letter-spacing: normal;
+  text-align: left;
+  color: #0a0a14;
+}
+h5 {
+  font-family: NunitoSans;
+  font-size: 14px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 1.36;
+  letter-spacing: 0.28px;
+  text-align: left;
+  color: #000;
+}
+h6 {
+  font-family: 'Industry Light';
+  font-size: 11px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 1.18;
+  letter-spacing: 0.22px;
+  text-align: left;
+  color: #171720;
+}
+body {
+  font-family: 'Nunito Sans';
+  font-size: 15px;
+  font-weight: normal;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 24px;
+  letter-spacing: normal;
+  text-align: left;
+  color: #4a4a4a;
+  background: #f6f6f6;
+  -webkit-font-smoothing: antialiased;
+}
+.app-bar {
+  align-items: center;
+  padding-left: 12px;
+  background-color: var(--color-flir-black);
+  display: flex;
+  height: 64px;
+}
+
+/* Make the carousel buttons bigger */
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  width: 3rem;
+  height: 3rem;
+}
+
+.carousel-caption {
+  font-size: 13px;
+  line-height: 16px;
+  padding-bottom: 0;
+  padding-top: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* The link style matches flir.com */
+a,
+a:hover {
+  text-decoration: underline;
+}
+a {
+  color: #6f6f6f;
+}
+
+.list-group-item {
+  overflow: clip;
+}
+
+pre {
+  background: #f6f6f6;
+  padding: 8px;
+  font-size: 12px;
+  line-height: 22px;
+}
+
+.table {
+  font-size: 14px;
+}
+
+/*  for showdown.js 
+*https://github.com/showdownjs/showdown/wiki/Tutorial:-Markdown-editor-using-Showdown
+*/
+
+#sourceTA {
+  display: block;
+}
+#targetDiv {
+  border: 1px dashed #333333;
+  width: 600px;
+  height: 400px;
+}
+
+/*
+ * ADAS Dataset Custom styles
+ */
+.md-source {
+  display: none;
+}
+
+.md-content {
+  width: 92%;
+  margin-left: 4%;
+  margin-right: 4%;
+}
+
+#readme-top,
+#readme-bottom,
+#download-col {
+  margin-top: 26px;
+}
+
+#main-carousel {
+  width: 90%;
+  margin-left: 4%;
+  margin-top: 24px;
+  margin-bottom: 24px;
+  border: 1px solid black;
+}

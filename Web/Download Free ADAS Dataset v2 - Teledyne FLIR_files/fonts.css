@@ -1,0 +1,185 @@
+@font-face {
+  font-family: 'Nunito Sans Bold';
+  src: url('/static/fonts/NunitoSans-Bold/NunitoSans-Bold.eot?#iefix') format('embedded-opentype'),
+    url('/static/fonts/NunitoSans-Bold/NunitoSans-Bold.woff2') format('woff2'),
+    url('/static/fonts/NunitoSans-Bold/NunitoSans-Bold.woff') format('woff'),
+    url('/static/fonts/NunitoSans-Bold/NunitoSans-Bold.svg#NunitoSans-Bold') format('svg');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Nunito Sans Extra Bold';
+  src: url('/static/fonts/NunitoSans-ExtraBold/NunitoSans-ExtraBold.eot?#iefix')
+      format('embedded-opentype'),
+    url('/static/fonts/NunitoSans-ExtraBold/NunitoSans-ExtraBold.woff2') format('woff2'),
+    url('/static/fonts/NunitoSans-ExtraBold/NunitoSans-ExtraBold.woff') format('woff'),
+    url('/static/fonts/NunitoSans-ExtraBold/NunitoSans-ExtraBold.svg#NunitoSans-ExtraBold')
+      format('svg');
+  font-weight: 800;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Nunito Sans Regular';
+  src: url('/static/fonts/NunitoSans-Regular/NunitoSans-Regular.eot?#iefix')
+      format('embedded-opentype'),
+    url('/static/fonts/NunitoSans-Regular/NunitoSans-Regular.woff2') format('woff2'),
+    url('/static/fonts/NunitoSans-Regular/NunitoSans-Regular.woff') format('woff'),
+    url('/static/fonts/NunitoSans-Regular/NunitoSans-Regular.svg#NunitoSans-Regular') format('svg');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Nunito Sans Semi Bold';
+  src: url('/static/fonts/NunitoSans-SemiBold/NunitoSans-SemiBold.eot?#iefix')
+      format('embedded-opentype'),
+    url('/static/fonts/NunitoSans-SemiBold/NunitoSans-SemiBold.woff2') format('woff2'),
+    url('/static/fonts/NunitoSans-SemiBold/NunitoSans-SemiBold.woff') format('woff'),
+    url('/static/fonts/NunitoSans-SemiBold/NunitoSans-SemiBold.svg#NunitoSans-SemiBold')
+      format('svg');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Nunito Sans';
+  src: url('/static/fonts/NunitoSans-Regular/NunitoSans-Regular.eot?#iefix')
+      format('embedded-opentype'),
+    url('/static/fonts/NunitoSans-Regular/NunitoSans-Regular.woff2') format('woff2'),
+    url('/static/fonts/NunitoSans-Regular/NunitoSans-Regular.woff') format('woff'),
+    url('/static/fonts/NunitoSans-Regular/NunitoSans-Regular.svg#NunitoSans-Regular') format('svg');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Industry Black';
+  src: url('/static/fonts/Industry-Black/Industry-Black.eot?#iefix') format('embedded-opentype'),
+    url('/static/fonts/Industry-Black/Industry-Black.woff') format('woff'),
+    url('/static/fonts/Industry-Black/Industry-Black.svg#Industry-Black') format('svg'),
+    url('/static/fonts/Industry-Black/Industry-Black.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Industry Black Italic';
+  src: url('/static/fonts/Industry-BlackItalic/Industry-BlackItalic.eot?#iefix')
+      format('embedded-opentype'),
+    url('/static/fonts/Industry-BlackItalic/Industry-BlackItalic.woff') format('woff'),
+    url('/static/fonts/Industry-BlackItalic/Industry-BlackItalic.svg#Industry-BlackItalic')
+      format('svg'),
+    url('/static/fonts/Industry-BlackItalic/Industry-BlackItalic.otf') format('opentype');
+  font-weight: 900;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Industry Bold';
+  src: url('/static/fonts/Industry-Bold/Industry-Bold.eot?#iefix') format('embedded-opentype'),
+    url('/static/fonts/Industry-Bold/Industry-Bold.woff') format('woff'),
+    url('/static/fonts/Industry-Bold/Industry-Bold.svg#Industry-Bold') format('svg'),
+    url('/static/fonts/Industry-Bold/Industry-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Industry Bold Italic';
+  src: url('/static/fonts/Industry-BoldItalic/Industry-BoldItalic.eot?#iefix')
+      format('embedded-opentype'),
+    url('/static/fonts/Industry-BoldItalic/Industry-BoldItalic.woff') format('woff'),
+    url('/static/fonts/Industry-BoldItalic/Industry-BoldItalic.svg#Industry-BoldItalic')
+      format('svg'),
+    url('/static/fonts/Industry-BoldItalic/Industry-BoldItalic.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Industry Book';
+  src: url('/static/fonts/Industry-Book/Industry-Book.eot?#iefix') format('embedded-opentype'),
+    url('/static/fonts/Industry-Book/Industry-Book.svg#Industry-Book') format('svg'),
+    url('/static/fonts/Industry-Book/Industry-Book.otf') format('opentype'),
+    url('/static/fonts/Industry-Book/Industry-Book.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Industry Book Italic';
+  src: url('/static/fonts/Industry-BookItalic/Industry-BookItalic.eot?#iefix')
+      format('embedded-opentype'),
+    url('/static/fonts/Industry-BookItalic/Industry-BookItalic.woff') format('woff'),
+    url('/static/fonts/Industry-BookItalic/Industry-BookItalic.svg#Industry-BookItalic')
+      format('svg'),
+    url('/static/fonts/Industry-BookItalic/Industry-BookItalic.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Industry Demi';
+  src: url('/static/fonts/Industry-Demi/Industry-Demi.eot?#iefix') format('embedded-opentype'),
+    url('/static/fonts/Industry-Demi/Industry-Demi.woff') format('woff'),
+    url('/static/fonts/Industry-Demi/Industry-Demi.svg#Industry-Demi') format('svg'),
+    url('/static/fonts/Industry-Demi/Industry-Demi.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Industry Demi Italic';
+  src: url('fonts/Industry-DemiItalic/Industry-DemiItalic.eot?#iefix') format('embedded-opentype'),
+    url('fonts/Industry-DemiItalic/Industry-DemiItalic.woff') format('woff'),
+    url('fonts/Industry-DemiItalic/Industry-DemiItalic.svg#Industry-DemiItalic') format('svg'),
+    url('fonts/Industry-DemiItalic/Industry-DemiItalic.otf') format('opentype');
+  font-weight: 600;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Industry Light';
+  src: url('/static/fonts/Industry-Light/Industry-Light.eot?#iefix') format('embedded-opentype'),
+    url('/static/fonts/Industry-Light/Industry-Light.woff') format('woff'),
+    url('/static/fonts/Industry-Light/Industry-Light.svg#Industry-Light') format('svg'),
+    url('/static/fonts/Industry-Light/Industry-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Industry Light Italic';
+  src: url('/static/fonts/Industry-LightItalic/Industry-LightItalic.eot?#iefix')
+      format('embedded-opentype'),
+    url('/static/fonts/Industry-LightItalic/Industry-LightItalic.woff') format('woff'),
+    url('/static/fonts/Industry-LightItalic/Industry-LightItalic.svg#Industry-LightItalic')
+      format('svg'),
+    url('/static/fonts/Industry-LightItalic/Industry-LightItalic.otf') format('opentype');
+  font-weight: 300;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Industry Medium';
+  src: url('/static/fonts/Industry-Medium/Industry-Medium.eot?#iefix') format('embedded-opentype'),
+    url('/static/fonts/Industry-Medium/Industry-Medium.woff') format('woff'),
+    url('/static/fonts/Industry-Medium/Industry-Medium.svg#Industry-Medium') format('svg'),
+    url('/static/fonts/Industry-Medium/Industry-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Industry Medium Italic';
+  src: url('/static/fonts/Industry-MediumItalic/Industry-MediumItalic.eot?#iefix')
+      format('embedded-opentype'),
+    url('/static/fonts/Industry-MediumItalic/Industry-MediumItalic.woff') format('woff'),
+    url('/static/fonts/Industry-MediumItalic/Industry-MediumItalic.svg#Industry-MediumItalic')
+      format('svg'),
+    url('/static/fonts/Industry-MediumItalic/Industry-MediumItalic.otf') format('opentype');
+  font-weight: 500;
+  font-style: italic;
+}
