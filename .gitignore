@@ -208,3 +208,9 @@ __marimo__/
 
 Datos/
 dataset.zip
+/images_rgb_train
+/images_rgb_val
+/images_thermal_train
+/images_thermal_val
+/video_rgb_test
+/video_thermal_test
