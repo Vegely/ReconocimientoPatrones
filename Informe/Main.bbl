@@ -1,0 +1,15 @@
+\begin{thebibliography}{1}
+
+\bibitem{conv}
+V.~Dumoulin and F.~Visin, ``A guide to convolution arithmetic for deep
+  learning,'' 2018.
+
+\bibitem{silu}
+S.~Elfwing, E.~Uchibe, and K.~Doya, ``Sigmoid-weighted linear units for neural
+  network function approximation in reinforcement learning,'' 2017.
+
+\bibitem{silu2}
+P.~Ramachandran, B.~Zoph, and Q.~V. Le, ``Searching for activation functions,''
+  2017.
+
+\end{thebibliography}

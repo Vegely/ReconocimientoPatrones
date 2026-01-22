@@ -1,0 +1,247 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+% Configuración de idioma español
+\usepackage[spanish, es-tabla]{babel} 
+
+% --- Matemáticas y Fuentes ---
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+% --- Diseño y Formato ---
+\usepackage{geometry}
+\usepackage{indentfirst}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+
+% --- Algoritmos ---
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% --- Gráficos (TikZ y PGFPlots) ---
+\usepackage{tikz}
+\usepackage{tikz-3dplot}
+\usepackage{pgfplots}
+
+% Configuración de compatibilidad de PGFPlots
+\pgfplotsset{compat=1.18} 
+
+% Librerías de TikZ necesarias
+\usetikzlibrary{positioning, shapes.geometric, arrows.meta, calc, backgrounds, shadows, patterns, babel}
+
+\raggedbottom
+\setlength{\parskip}{1em}   
+\setlength{\parindent}{0.75cm}
+\geometry{
+	a4paper,
+	total={170mm,257mm},
+	left=20mm,
+	top=20mm,
+}
+
+\title{Trabajo: Técnicas de Reconocimiento de Patrones}
+\author{Jorge Bengoa Pinedo \and Bogurad Barañski Barañska \and Sergio Izquierdo Morona }
+\date{\today}
+
+\begin{document}
+	
+	\maketitle
+	
+	\tableofcontents
+	\newpage
+
+	\section{Introducción a la clasificación de imágenes térmicas}
+	Explicar el estado del arte un poco de que hay y tal.... redes tal, este otro tipo de clasificación
+	\subsection{Redes Convolucionales...}
+	\subsection{Metodología Yolo}
+	
+	\section{Fundamentos de funcionamiento de la red Yolo}
+	A continuación se desarrrolla el funcionamiento de la red YOLO mediante la teoría de Marr para lo cuál es necesario describir el nivel implementacional y algoritmico. En este caso las redes neuronales artificiales se componen de 3 componentes que se describirán a continuación:
+	\begin{itemize}
+		\item Caracterización de la neurona.
+		\item Definición de una topología de interconexión
+		\item Definición de unas reglas de ajuste de pesos
+	\end{itemize}
+	
+	\subsection{Neurona de la red Yolo}
+	La unidad fundamental de procesamiento en la arquitectura YOLO es la capa convolucional (típica de las CNN). En esta sección se describe el funcionamiento de dicha operación, tomando como caso de estudio la capa de entrada, analizando tanto el entrenamiento específico realizado para imágenes térmicas como la implementación por defecto, tal como se ilustra en la Figura \ref{fig:neuronaInit}.
+	\begin{figure}[H]
+		\begin{tikzpicture}[
+			font=\sffamily,
+			>=Latex,
+			% Define styles for the blocks
+			block/.style={
+				draw=blue!60!black, 
+				fill=blue!5, 
+				thick, 
+				minimum height=1.5cm, 
+				minimum width=2cm, 
+				align=center,
+				rounded corners=3pt,
+				drop shadow
+			},
+			sum/.style={
+				circle, 
+				draw=black, 
+				fill=white, 
+				thick, 
+				inner sep=0pt, 
+				minimum size=0.8cm,
+				drop shadow
+			},
+			label_text/.style={
+				font=\footnotesize\color{gray!40!black}, 
+				align=center
+			},
+			dim_text/.style={
+				font=\small\bfseries\color{blue!40!black}
+			}
+			]
+			
+			% --- 1. INPUT ---
+			\node (input) at (0,0) {\Large $X$};
+			\node[label_text, above=0.2cm of input] {Input Image};
+			\node[below=0.5cm of input] (dim_text) {$1 \times 3 \times 640 \times 640$};
+			
+			% Annotation for Batch/Channels
+			\draw[->, gray, thin] (dim_text.south west) ++(0.2,-1.2) -- ++(0,1.3);
+			\draw[->, gray, thin] (dim_text.south west) ++(0.8,-0.8) -- ++(0,0.9);
+			\draw[->, gray, thin] (dim_text.south west) ++(1.6,-0.5) -- ++(0,0.6);			
+			\draw[->, gray, thin] (dim_text.south west) ++(2.6,-0.8) -- ++(0,0.9);		
+			
+			\node[font=\small, anchor=north] at ([xshift=0.2cm,  yshift=-1.2cm]dim_text.south west) {Batch (Imágenes)};
+			\node[font=\small, anchor=north] at ([xshift=0.8cm, yshift=-0.8cm]dim_text.south west) {Canales};
+			\node[font=\small, anchor=north] at ([xshift=1.6cm,  yshift=-0.5cm]dim_text.south west) {Alto};
+			\node[font=\small, anchor=north] at ([xshift=2.6cm,  yshift=-0.8cm]dim_text.south west) {Ancho};	
+			
+			% --- 2. CONVOLUTION BLOCK (W) ---
+			\node[block, right=2.5cm of input] (conv) {\Large $W$};
+			\draw[->, thick] (input) -- (conv);
+			\node[above=0.8cm of conv, align=center] (w_dims) {
+				$32 \times 3 \times 6 \times 6$
+			};
+			\draw[->, gray, thin] (w_dims.north west) ++(0.35, 1.2) -- ++(0,-1.2);
+			\node[font=\small, anchor=south] at ([xshift=0.35cm, yshift=1.2cm]w_dims.north west) {Filtros};
+			\draw[->, gray, thin] (w_dims.north west) ++(1.05, 0.6) -- ++(0,-0.6);
+			\node[font=\small, anchor=south] at ([xshift=1.05cm, yshift=0.6cm]w_dims.north west) {Canales};
+			\draw[decorate, decoration={brace, amplitude=3pt, mirror}, red!60!black, thick] 
+			([xshift=1.35cm, yshift=0.1cm]w_dims.south west) -- 
+			([xshift=2.35cm, yshift=0.1cm]w_dims.south west);
+			\node[font=\small, red!60!black, anchor=north] at ([xshift=1.85cm, yshift=0.0cm]w_dims.south west) {Kernel};
+			\draw[->, thick] (w_dims) -- (conv);
+			\node[label_text, below=0.2cm of conv] {Convolución con los pesos $W$};
+			
+			
+			% --- 3. SUMMATION (Bias) ---
+			\node[sum, right=1.5cm of conv] (adder) {\Large $+$};
+			
+			% Arrow Conv -> Sum
+			\draw[->, thick] (conv) -- node[above, font=\small] {$X*W$} (adder);
+			
+			% Bias Input
+			\node[below=1.5cm of adder] (bias) {$b = (32 \times 1)$};
+			\draw[decorate, decoration={brace, amplitude=4pt, mirror}, thick, black] 
+			(bias.south west) -- (bias.south east) 
+			node[midway, below=4pt, font=\small\normalfont, text=black] {Sesgo};
+			\draw[->, thick] (bias) -- (adder);
+			
+			
+			% --- 4. ACTIVATION (SiLU) ---
+			\node[block, right=1.5cm of adder, minimum width=1.5cm] (silu) {SiLU\\ $\sigma(\cdot)$};
+			\node[label_text, below=0.2cm of silu] {Función de activación};
+			% Arrow Sum -> SiLU
+			\draw[->, thick] (adder) -- (silu);
+			
+			
+			% --- 5. OUTPUT ---
+			\node[right=2.5cm of silu] (output) {\Large $f(X)$};
+			
+			% Arrow SiLU -> Output
+			\draw[->, thick] (silu) -- (output);
+			
+			% Output Dimensions
+			\node[dim_text, below=0.6cm of output, font=\small, text=black](dim_text_2) {$1 \times 32 \times 320 \times 320$};
+			\node[label_text, above=0.2cm of output] {Espacio de características};
+			
+			% Annotation for Batch/Channels
+			\draw[->, gray, thin] (dim_text_2.south west) ++(0.8,-1.2) -- ++(0,1.3);
+			\draw[->, gray, thin] (dim_text_2.south west) ++(0.2,-0.8) -- ++(0,0.9);
+			\draw[->, gray, thin] (dim_text_2.south west) ++(1.6,-0.5) -- ++(0,0.6);			
+			\draw[->, gray, thin] (dim_text_2.south west) ++(2.6,-0.8) -- ++(0,0.9);		
+			
+			\node[font=\small, anchor=north] at ([xshift=0.2cm,  yshift=-0.8cm]dim_text_2.south west) {Batch };
+			\node[font=\small, anchor=north] at ([xshift=0.8cm, yshift=-1.2cm]dim_text_2.south west) {Características};
+			\node[font=\small, anchor=north] at ([xshift=1.6cm,  yshift=-0.5cm]dim_text_2.south west) {Alto};
+			\node[font=\small, anchor=north] at ([xshift=2.6cm,  yshift=-0.8cm]dim_text_2.south west) {Ancho};	
+			
+		\end{tikzpicture}
+		\caption{Estructura de la neurona a la entrada de la red YOLO.}
+		\label{fig:neuronaInit}
+	\end{figure}
+	
+	La operación de esta neurona convolucional está definida por los siguientes hiperparámetros:
+	\begin{itemize}
+		\item \textbf{Número de filtros (Características \(C_{out}\))}: Determinado por la primera dimensión del tensor de pesos. Define cuántos mapas de características se generarán.
+		\item \textbf{Canales de entrada ($C_{in}$)}: Determinado por la segunda dimensión del tensor de pesos (e.g., 3 para RGB, 1 para imágenes térmicas).
+		\item \textbf{Tamaño del Kernel ($k$)}: Define las dimensiones espaciales de la ventana de convolución (últimas dos dimensiones de los pesos). En la arquitectura YOLO analizada, se emplean principalmente los tamaños (6,6) para la entrada, y (3,3) o (1,1) para capas profundas.
+		\item \textbf{Padding ($P$)}: Parámetro de relleno utilizado para controlar las dimensiones espaciales de la salida e indicar los bordes al llenarlos de ceros. En YOLO se utilizan típicamente valores de (2,2), (1,1), o (0,0).
+		\item \textbf{Stride ($S$)}: Controla el paso o desplazamiento del filtro sobre la imagen. Un $S=1$ mueve el filtro píxel a píxel (preservando resolución), mientras que $S=2$ lo desplaza cada dos píxeles, reduciendo la dimensión espacial a la mita.
+		\item \textbf{Dilatación ($d$)}: Controla la separación entre los puntos que analiza el kernel (también conocida como \textit{atrous convolution} cuando $d > 1$). En esta implementación de YOLO, el parámetro es (1,1), lo que indica una convolución estándar compacta sin huecos entre los elementos del kernel.
+		\item \textbf{Agrupación ($g$)}: Controla la conectividad entre los canales de entrada y salida. Dado que en YOLO se utiliza $g=1$, se realiza una convolución estándar donde todos los canales de entrada contribuyen al cálculo de cada filtro de salida.
+	\end{itemize}
+	
+	A partir de estos hiperparámetros, es posible determinar las dimensiones espaciales del mapa de características de salida. Dado que se contempla el factor de dilatación, se debe utilizar la relación generalizada descrita por \cite{conv}.
+	\begin{equation} 
+		\text{Salida} = \left\lfloor \frac{\text{Entrada} + 2 \cdot P - [k + (k-1)(d-1)]}{S} \right\rfloor + 1
+	 \end{equation}
+	
+	En cuanto a la activación de cada neurona, el proceso consiste en aplicar la función SiLU (\textit{Sigmoid Linear Unit}) al resultado de la operación lineal (convolución más sesgo). Matemáticamente, la activación \(f(X)\) se expresa como:
+	\begin{equation}
+		f(X) = \underbrace{[(W * X) + b]}_{z} \cdot \sigma(\underbrace{[(W * X) + b]}_{z})
+	\end{equation}
+	\noindent donde \(\sigma(z) = \frac{1}{1+e^{-z}}\) es la función sigmoide logística. Se utiliza esta función de activación porque permite el calculo de gradientes y solo permite valores negativos pequeños para mejorar el flujo de gradientes \cite{silu,silu2}, se ilustra en la Figura \ref{fig:silu_plot}.
+
+	\begin{figure}[H] 
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[
+				axis lines=middle,     
+				xlabel={$z$},           
+				ylabel={$SiLU(z)$},
+				xlabel style={at={(ticklabel cs:1)}, anchor=north west},
+				ylabel style={at={(ticklabel cs:1)}, anchor=south west},
+				xmin=-4.5, xmax=4.5,
+				ymin=-1.5, ymax=4.5,
+				width=10cm, height=7cm, % Tamaño de la gráfica
+				grid=major,
+				grid style={line width=.1pt, draw=gray!20}
+				]
+				% EL COMANDO QUE FALLABA
+				\addplot[color=blue!70!black, thick, mark=none, domain=-4.5:4.5, samples=100] 
+				{x / (1 + exp(-x))};
+				
+				% Etiqueta manual dentro de la gráfica
+				\node[color=blue!70!black, anchor=west] at (axis cs:1.5, 3) {$z \cdot \sigma(z)$};
+				
+				% Mínimo local (decoración)
+				\draw[dashed, help lines] (axis cs:-1.28, 0) -- (axis cs:-1.28, -0.278);
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Representación gráfica de la función de activación SiLU.}
+		\label{fig:silu_plot}
+	\end{figure}
+	
+	Por otro lado, la operación de convolución discreta 2D ($W*X$) en el contexto de aprendizaje profundo se implementa técnicamente como una correlación cruzada (sin voltear el kernel) pues solo se busca conocer los pesos y no aplicar un filtro con una topología concreta. Para un filtro de salida específico ($c_{out}$) en la posición espacial $(h, w)$, la operación se define formalmente como \cite{conv}:	
+	\begin{equation}
+		(W * X)(c_{out}, h, w) = \sum_{l=0}^{\frac{C_{in}}{g}-1} \sum_{i=0}^{K_H-1} \sum_{j=0}^{K_W-1} W(c_{out}, l, i, j) \cdot X(l, h \cdot S + i \cdot d - P, w \cdot S + j \cdot d - P)
+	\end{equation}
+
+	
+	\bibliographystyle{ieeetr}
+	\bibliography{bibliografia} 
+	
+\end{document}

@@ -214,3 +214,6 @@ dataset.zip
 /images_thermal_val
 /video_rgb_test
 /video_thermal_test
+Informe/Main.synctex.gz
+Informe/Main.aux
+yolov5s.onnx

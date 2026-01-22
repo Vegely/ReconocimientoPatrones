@@ -4,13 +4,26 @@ import torch
 model = torch.hub.load(repo_or_dir='yolov5', model='custom', path='yolov5s.pt', source='local')
 
 # # Define the input image source (URL, local file, PIL image, OpenCV frame, numpy array, or list)
-img = "images_thermal_train/data/video-2Af3dwvs6YPfwSSf6-frame-006450-qMZz6qvyHLyXZvCGj.jpg"  # Example image
+#img = "images_thermal_train/data/video-2Af3dwvs6YPfwSSf6-frame-006450-qMZz6qvyHLyXZvCGj.jpg"  # Example image
 # img = "imagen.jpeg"
 
 # Perform inference (handles batching, resizing, normalization automatically)
 print(model)
-results = model(img)
+#results = model(img)
 
+dummy_input = torch.randn(1, 3, 640, 640)
+
+# 3. Export to ONNX
+torch.onnx.export(
+    model, 
+    dummy_input, 
+    "yolov5s.onnx", 
+    opset_version=18,
+    input_names=['images'],
+    output_names=['output']
+)
+
+print("Model exported to 'yolov5s.onnx'. Upload this file to https://netron.app to view.")
 # Process the results (options: .print(), .show(), .save(), .crop(), .pandas())
 # results.print()  # Print results to console
 # results.show()  # Display results in a window
