@@ -2,7 +2,7 @@ import json
 import os
 import pandas as pd
 
-def labelsGenerator(input_path, output_path):    
+def labelsGenerator(input_path, output_path, category_mapping):    
     with open(input_path, 'r') as f:
         data = json.load(f)
     
@@ -29,6 +29,16 @@ def labelsGenerator(input_path, output_path):
     df_merge[["bbox_x_center_norm", "bbox_width_norm"]] = df_merge[["bbox_x_center", "bbox_width"]].div(df_merge["width_img"], axis=0)
     df_merge[["bbox_y_center_norm", "bbox_height_norm"]] = df_merge[["bbox_y_center", "bbox_height"]].div(df_merge["height_img"], axis=0)
     
+    coco2yolo_mapping = {}
+    for _, row in categories.iterrows():
+        name = row["name"]
+        id_coco = row["id"]
+        
+        if name in category_mapping:
+            coco2yolo_mapping[id_coco] = category_mapping[name]
+    
+    df_merge['category_id'] = df_merge['category_id'].map(coco2yolo_mapping)
+    
     df_merge["file_path"] = output_path + df_merge["file_name"]
     for file_path, group in df_merge.groupby("file_path"):
         if os.path.exists(file_path):
@@ -42,14 +52,32 @@ def labelsGenerator(input_path, output_path):
             f.write("\n".join(yolo_lines))
         
 data_dir = "../data/"
-subdirs =  [data_dir + d for d in ["images_thermal_train/", "images_thermal_val/", "video_thermal_test/"]]
+subdirs =  [data_dir + "metadata/" + d for d in ["train/", "val/", "test/"]]
 input_paths = [d + "coco.json" for d in subdirs]
-output_paths = ["labels_train/", "labels_val/", "labels_test/"]
-output_paths = [data_dir + o for o in output_paths]
+output_paths = [data_dir + "labels/" + d for d in ["images_thermal_train/", "images_thermal_val/", "video_thermal_test/"]]
 [os.makedirs(o, exist_ok=True) for o in output_paths]
 
+category_mapping = {
+        "person":0,
+        "bike":1,
+        "car":2,
+        "motor":3,
+        "bus":4,
+        "train":5,
+        "truck":6,
+        "light":7,
+        "hydrant":8,
+        "sign":9,
+        "dog":10,
+        "deer":11,
+        "skateboard":12,
+        "stroller":13,
+        "scooter":14,
+        "other vehicle":15
+    }
+
 for (input_path, output_path) in zip(input_paths, output_paths):
-    labelsGenerator(input_path, output_path)
+    labelsGenerator(input_path, output_path, category_mapping)
     
     
     
