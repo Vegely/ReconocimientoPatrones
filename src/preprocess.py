@@ -1,6 +1,7 @@
 # import torch
 
 # Load a YOLOv5 model (options: yolov5n, yolov5s, yolov5m, yolov5l, yolov5x)
+# model = torch.hub.load(repo_or_dir='yolov5', model='custom', path='yolov5s.pt', source='local')
 
 # # Define the input image source (URL, local file, PIL image, OpenCV frame, numpy array, or list)
 #img = "images_thermal_train/data/video-2Af3dwvs6YPfwSSf6-frame-006450-qMZz6qvyHLyXZvCGj.jpg"  # Example image
