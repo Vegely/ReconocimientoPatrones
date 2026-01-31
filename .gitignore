@@ -212,3 +212,6 @@ dataset.zip
 Informe/Main.synctex.gz
 Informe/Main.aux
 yolov5s.onnx
+/images_thermal_train
+/images_thermal_val
+/video_thermal_test

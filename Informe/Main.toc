@@ -4,3 +4,4 @@
 \contentsline {subsection}{\numberline {1.2}Metodología Yolo}{2}{}%
 \contentsline {section}{\numberline {2}Fundamentos de funcionamiento de la red Yolo}{2}{}%
 \contentsline {subsection}{\numberline {2.1}Neurona de la red Yolo}{2}{}%
+\contentsline {subsection}{\numberline {2.2}Topología de la red}{4}{}%
