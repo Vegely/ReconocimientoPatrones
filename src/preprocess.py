@@ -75,10 +75,11 @@
 import torch
 
 # Load a YOLOv5 model (options: yolov5n, yolov5s, yolov5m, yolov5l, yolov5x)
-model = torch.hub.load("ultralytics/yolov5", "yolov5s")  # Default: yolov5s
-
+#model = torch.hub.load("ultralytics/yolov5", "yolov5s")  # Default: yolov5s
+model_path = r"\yolov5\runs\train\exp3\weights\best.pt"
+model = torch.hub.load("ultralytics/yolov5", "custom", path=model_path)
 # Define the input image source (URL, local file, PIL image, OpenCV frame, numpy array, or list)
-img = r"C:\Users\Sergio\Documents\GitHub\ReconocimientoPatrones\data\video_rgb_test\data\video-RMxN6a4CcCeLGu4tA-frame-000731-q2KuuqphGsCeEbf5c.jpg"  # Example image
+img = r"\data\images\video_thermal_test\video-4FRnNpmSmwktFJKjg-frame-000745-L6K5SC6fYjHNC8uff.jpg"  # Example image
 
 # Perform inference (handles batching, resizing, normalization automatically)
 results = model(img)
@@ -148,8 +149,8 @@ cv2.destroyAllWindows()
 import cv2
 import os
 
-input_dir = r"C:\Users\Sergio\Documents\GitHub\ReconocimientoPatrones\data\video_rgb_test\data"
-output_dir = r"C:\Users\Sergio\Desktop\videos_prueba"
+input_dir = r"\data\images\video_thermal_test"
+output_dir = r"\Results"
 
 from collections import defaultdict
 
