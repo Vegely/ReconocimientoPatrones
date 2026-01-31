@@ -26,12 +26,13 @@
 \usepackage{tikz}
 \usepackage{tikz-3dplot}
 \usepackage{pgfplots}
-
+\usepackage[labelfont=bf, font=sf]{caption}
 % Configuración de compatibilidad de PGFPlots
 \pgfplotsset{compat=1.18} 
 
 % Librerías de TikZ necesarias
-\usetikzlibrary{positioning, shapes.geometric, arrows.meta, calc, backgrounds, shadows, patterns, babel}
+\usetikzlibrary{positioning, shapes.geometric, arrows.meta, calc, backgrounds, fit, shadows, patterns, babel}
+
 
 \raggedbottom
 \setlength{\parskip}{1em}   
@@ -237,9 +238,234 @@
 	
 	Por otro lado, la operación de convolución discreta 2D ($W*X$) en el contexto de aprendizaje profundo se implementa técnicamente como una correlación cruzada (sin voltear el kernel) pues solo se busca conocer los pesos y no aplicar un filtro con una topología concreta. Para un filtro de salida específico ($c_{out}$) en la posición espacial $(h, w)$, la operación se define formalmente como \cite{conv}:	
 	\begin{equation}
-		(W * X)(c_{out}, h, w) = \sum_{l=0}^{\frac{C_{in}}{g}-1} \sum_{i=0}^{K_H-1} \sum_{j=0}^{K_W-1} W(c_{out}, l, i, j) \cdot X(l, h \cdot S + i \cdot d - P, w \cdot S + j \cdot d - P)
+		(W * X)(c_{out}, h, w) = \sum_{l=0}^{\frac{C_{in}}{g}-1} \sum_{i=0}^{K_H-1} \sum_{j=0}^{K_W-1} W(c_{out}, l, i, j) \cdot X(l, h \cdot S + i \cdot d , w \cdot S + j \cdot d)
 	\end{equation}
+	\newpage
+	\subsection{Topología de la red}
+	
+	\begin{figure}[htbp]
+		\centering
+		
+		% --- TikZ Setup ---
+		\begin{tikzpicture}[
+			node distance=1.5cm,
+			% --- Styles ---
+			cvblock/.style={
+				rectangle, draw, rounded corners, fill=cyan!10, drop shadow,
+				minimum width=1.2cm, minimum height=1.2cm, align=center, font=\bfseries\sffamily\scriptsize
+			},
+			% Rhombus Style for Sumator
+			sumnode/.style={
+				diamond, draw, fill=green!10, drop shadow,
+				minimum width=1.0cm, minimum height=1.0cm, align=center, font=\bfseries\sffamily\large, inner sep=0pt
+			},
+			line/.style={
+				draw, -Latex, thick, color=darkgray
+			},
+			dimlabel/.style={
+				font=\sffamily\tiny, color=gray, align=center, auto
+			}
+			]
+			
+			% --- 1. Input Node (Invisible start point) ---
+			\node (input_start) {};
+			
+			% --- 2. Main Processing Branch (Top) ---
+			% First CV
+			\node [cvblock, right=2cm of input_start] (cv1) {CV\\$W_{A}$};
+			
+			% Second CV
+			\node [cvblock, right=1.2cm of cv1] (cv2) {CV\\$W_{B}$};
+			
+			% Sumator (Rhombus)
+			\node [sumnode, right=1.2cm of cv2, label=below:\sffamily\scriptsize] (sigma) {$\Sigma$};
+			
+			% --- 3. Connections & Shortcut ---
+			
+			% Input Line
+			\draw [line] (input_start) -- (cv1.west);
+			
+			% Label Input Size
+			\node [dimlabel, above] at ($(input_start)!0.5!(cv1.west)$) {Tamaño Entrada\\$C \times H \times W$};
+			
+			% Internal Connections (Main Branch)
+			\draw [line] (cv1) -- node[dimlabel, above] {} (cv2);
+			\draw [line] (cv2) -- (sigma.west);
+			
+			% --- The Residual Shortcut (The "Loop") ---
+			% Define a split point before CV1
+			\coordinate (split_point) at ($(cv1.west) + (-1.0, 0)$);
+			
+			% Define the target at the BOTTOM of the diamond
+			\coordinate (sigma_bottom) at (sigma.south);
+			
+			% Draw Shortcut Line:
+			% 1. Start at split point
+			% 2. Go Down (vertical)
+			% 3. Go Right (horizontal) until under the sigma
+			% 4. Go Up into the sigma
+			% --- The Residual Shortcut (The "Loop") ---
+			\coordinate (split_point) at ($(cv1.west) + (-1.0, 0)$);
+			\coordinate (sigma_bottom) at (sigma.south);
+			
+			% 1. The Line (Clean)
+			\draw [line] (split_point) -- ++(0, -1.8) -| (sigma_bottom);
+			
+			% 2. The Text (Separated)
+			% Logic: Located halfway (0.5) horizontally between start and end, 
+			% and shifted down 1.8cm to match the line's depth.
+			\node [font=\sffamily\tiny, color=gray, below, yshift=-2pt] 
+			at ($(split_point)!0.5!(sigma) + (0, -1.8)$) 
+			{Identidad (Residuos)};
+			
 
+			% Dot
+			\fill [darkgray] (split_point) circle (2pt);
+			% Add the visual "dot" at the split point for clarity
+			\fill [darkgray] (split_point) circle (2pt);
+			
+			% --- 4. Final Output ---
+			\node [right=1.5cm of sigma] (output_end) {};
+			\draw [line] (sigma.east) -- (output_end);
+			
+			% Label Output Preservation
+			\node [dimlabel, above] at ($(sigma.east)!0.5!(output_end)$) {Tamaño Salida\\$C \times H \times W$\\(Preservada)};
+			
+			% --- 5. Legend ---
+			\node [draw, dashed, fill=white, rounded corners, 
+			font=\sffamily\scriptsize, align=left, anchor=north,
+			% CHANGE THE NUMBERS BELOW TO MOVE THE BOX: (X, Y)
+			at={($(cv2) + (-0.5, -2.2)$)}] {
+				\textbf{Leyenda:}\\
+				\textbf{CV}: Neurona convolucional\\
+				\textbf{$\Sigma$}: Suma elemento a elemento\\
+				$W_{A}=\{C, C, 1, 1\}$: Reduce/Procesa canales (1x1)\\
+				$W_{B}=\{C, C, 3, 3\}$: Extracción características (3x3)
+			};
+			
+		\end{tikzpicture}
+		
+		% --- Caption serves as Title ---
+		\caption{Architecture of a Standard Residual Bottleneck (ResNet Block)}
+		\label{fig:standard_bottleneck}
+	\end{figure}
+	
+	\begin{figure}[htbp]
+		\centering
+		
+		% --- TikZ Setup ---
+		\begin{tikzpicture}[
+			node distance=1.5cm,
+			% --- Styles ---
+			cvblock/.style={
+				rectangle, draw, rounded corners, fill=cyan!10, drop shadow,
+				minimum width=1.2cm, minimum height=1.2cm, align=center, font=\bfseries\sffamily\scriptsize
+			},
+			concatblock/.style={
+				rectangle, draw, fill=orange!20, drop shadow,
+				minimum width=1cm, minimum height=3.5cm, align=center, font=\bfseries\sffamily\small
+			},
+			line/.style={
+				draw, -Latex, thick, color=darkgray
+			},
+			dimlabel/.style={
+				font=\sffamily\tiny, color=gray, align=center, auto
+			}
+			]
+			
+			% --- 1. Entry Concatenator ---
+			\node [concatblock, label=below:\sffamily\scriptsize In Concat] (concat_in) {CONCAT};
+			
+			% Inputs to Entry Concat
+			\draw [line] ($(concat_in.west) + (-2, 0.5)$) -- node[above, font=\tiny] {In 1} ($(concat_in.west) + (0, 0.5)$);
+			\draw [line] ($(concat_in.west) + (-2, -0.5)$) -- node[below, font=\tiny] {In 2} ($(concat_in.west) + (0, -0.5)$);
+			
+			% --- 2. Top Branch (Main Processing: 3 CVs) ---
+			% Position relative to entry concat
+			\node [cvblock, above right=0.0cm and 1.5cm of concat_in] (top1) {CV\\$W_{1}$};
+			\node [cvblock, right=0.8cm of top1] (top2) {CV\\$W_{2}$};
+			\node [cvblock, right=0.8cm of top2] (top3) {CV\\$W_{3}$};
+			
+			% --- 3. Bottom Branch (Shortcut: 1 CV) ---
+			% Positioned centrally below the top chain for symmetry
+			% We align it horizontally with top2 so it looks balanced
+			\node [cvblock, below=3.5cm of top2] (bot1) {CV\\$W_{1}$};
+			
+			% --- Connections from Entry Concat to Branches ---
+			\coordinate (split_point) at ($(concat_in.east) + (0.5, 0)$);
+			
+			% 1. Draw the line (Clean, no text)
+			\draw [line] (concat_in.east) -- (split_point);
+			
+			% 2. Draw the text (Separately)
+			% We place it exactly halfway (0.5) between concat_in and split_point
+			\node [dimlabel, above, yshift=-6pt] at ($(concat_in.east)!2.6!(split_point)$) {$C/2 \times H \times W$};
+			
+			\node [dimlabel, above, yshift=-8pt] at ($(concat_in.east)!-6!(split_point)$) {Tamaño Entrada\\$C \times H \times W$};
+			
+			% To Top (No text)
+			\draw [line] (split_point) |- (top1.west);
+			
+			% To Bottom (No text)
+			\draw [line] (split_point) |- (bot1.west);
+			
+			% --- Connections within branches ---
+			% Top chain
+			\draw [line] (top1) -- (top2);
+			\draw [line] (top2) -- (top3);
+			
+			% --- 4. Output Concatenator ---
+			\node [concatblock, right=9cm of concat_in, label=below:\sffamily\scriptsize Out Concat] (concat_out) {CONCAT};
+			
+
+			
+			% FIX: Define a shared vertical axis for the bend (0.8cm to the right of top3)
+			% This ensures both lines turn at the exact same X-coordinate
+			\coordinate (turn_axis) at ($(top3.east) + (0.8, 0)$);
+			
+			% Connect Top Branch (Path 1)
+			\coordinate (in_top) at ($(concat_out.west) + (0, 0.6)$);
+			
+			% Draw: (Start) -- (Go to Axis) |- (Target)
+			% The syntax (source -| turn_axis) finds the intersection point (axis X, source Y)
+			\draw [line] (top3.east) -- (top3.east -| turn_axis) |- (in_top) node[left, font=\tiny, xshift=-2pt,yshift=-5pt] {(1)}; 
+			
+			% Connect Bottom Branch (Path 2)
+			\coordinate (in_bot) at ($(concat_out.west) + (0, -0.6)$);
+			
+			% Draw: Same logic, it will extend the line further to hit the same axis
+			\draw [line] (bot1.east) -- (bot1.east -| turn_axis) |- (in_bot) node[left, font=\tiny, xshift=-2pt,yshift=5pt] {(2)};
+			% --- Legend / Info Box ---
+			% --- 5. Final Transition & Output ---
+			% Add the final CV block after Concat
+			\node [cvblock, right=1.0cm of concat_out] (final_cv) {CV\\$W_{4}$};
+			\draw [line] (concat_out.east) -- (final_cv.west);
+			
+			% Draw the final outgoing line
+			\node [right=1.5cm of final_cv] (final_out) {};
+			\draw [line] (final_cv.east) -- (final_out);
+			
+			% Label the preservation of size at the very end
+			\node [dimlabel, above] at ($(final_cv.east)!0.5!(final_out)$) {Tamaño Salida\\$C \times H \times W$\\(Preservada)};
+			
+			\node [draw, dashed, fill=white, rounded corners, below=0.5cm of bot1, font=\sffamily\scriptsize, align=left] {
+				\textbf{Leyenda:}\\
+				\textbf{CV}: Neurona convolucional\\
+				\textbf{Concat}: Concatenador de cadenas\\
+				\textbf{C}: Número de canales\\
+				\textbf{H,W}: Ancho y alto de los mapas de características.\\
+				$W_{1}=\{C/2,2C,1,1\}$: Pesos neuronas de entrada para ...\\
+				$W_{2}=\{C/2,C/2,1,1\}$: Pesos neurona de...\\
+				$W_{3}=\{C/2,C/2,3,3\}$: Pesos neurona de...\\
+				$W_{4}=\{C,C,1,1\}$: Pesos neurona de salida para...
+			};
+			
+		\end{tikzpicture}
+		
+		% --- Caption serves as Title ---
+		\caption{Architecture of the CSP Bottleneck (YOLOv5 C3 Module)}
+		\label{fig:csp_bottleneck}
+	\end{figure}
 	
 	\bibliographystyle{ieeetr}
 	\bibliography{bibliografia} 
