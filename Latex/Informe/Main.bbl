@@ -1,4 +1,7 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
+
+\bibitem{yolov5}
+G.~Jocher, ``{YOLOv5 by Ultralytics},'' 5 2020.
 
 \bibitem{conv}
 V.~Dumoulin and F.~Visin, ``A guide to convolution arithmetic for deep
@@ -11,5 +14,32 @@ S.~Elfwing, E.~Uchibe, and K.~Doya, ``Sigmoid-weighted linear units for neural
 \bibitem{silu2}
 P.~Ramachandran, B.~Zoph, and Q.~V. Le, ``Searching for activation functions,''
   2017.
+
+\bibitem{redmon2016lookonceunifiedrealtime}
+J.~Redmon, S.~Divvala, R.~Girshick, and A.~Farhadi, ``You only look once:
+  Unified, real-time object detection,'' 2016.
+
+\bibitem{redmon2016yolo9000betterfasterstronger}
+J.~Redmon and A.~Farhadi, ``Yolo9000: Better, faster, stronger,'' 2016.
+
+\bibitem{redmon2018yolov3incrementalimprovement}
+J.~Redmon and A.~Farhadi, ``Yolov3: An incremental improvement,'' 2018.
+
+\bibitem{bochkovskiy2020yolov4optimalspeedaccuracy}
+A.~Bochkovskiy, C.-Y. Wang, and H.-Y.~M. Liao, ``Yolov4: Optimal speed and
+  accuracy of object detection,'' 2020.
+
+\bibitem{he2015deepresiduallearningimage}
+K.~He, X.~Zhang, S.~Ren, and J.~Sun, ``Deep residual learning for image
+  recognition,'' 2015.
+
+\bibitem{wang2019cspnetnewbackboneenhance}
+C.-Y. Wang, H.-Y.~M. Liao, I.-H. Yeh, Y.-H. Wu, P.-Y. Chen, and J.-W. Hsieh,
+  ``Cspnet: A new backbone that can enhance learning capability of cnn,'' 2019.
+
+\bibitem{He_2014}
+K.~He, X.~Zhang, S.~Ren, and J.~Sun, {\em Spatial Pyramid Pooling in Deep
+  Convolutional Networks for Visual Recognition}, p.~346–361.
+\newblock Springer International Publishing, 2014.
 
 \end{thebibliography}

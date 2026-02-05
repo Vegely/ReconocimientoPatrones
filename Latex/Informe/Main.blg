@@ -1,48 +1,49 @@
-This is BibTeX, Version 0.99d
+This is BibTeX, Version 0.99d (TeX Live 2023)
 Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: Main.aux
-Reallocating 'name_of_file' (item size: 1) to 7 items.
 The style file: ieeetr.bst
-Reallocating 'name_of_file' (item size: 1) to 13 items.
 Database file #1: bibliografia.bib
-You've used 3 entries,
+Warning--entry type for "yolov5" isn't style-file defined
+--line 207 of file bibliografia.bib
+You've used 11 entries,
             1876 wiz_defined-function locations,
-            488 strings with 3804 characters,
-and the built_in function-call counts, 465 in all, are:
-= -- 33
-> -- 30
+            520 strings with 4910 characters,
+and the built_in function-call counts, 1934 in all, are:
+= -- 152
+> -- 123
 < -- 0
-+ -- 11
-- -- 8
-* -- 26
-:= -- 77
-add.period$ -- 3
-call.type$ -- 3
-change.case$ -- 3
++ -- 45
+- -- 34
+* -- 104
+:= -- 286
+add.period$ -- 12
+call.type$ -- 11
+change.case$ -- 10
 chr.to.int$ -- 0
-cite$ -- 3
-duplicate$ -- 12
-empty$ -- 55
-format.name$ -- 8
-if$ -- 110
+cite$ -- 11
+duplicate$ -- 68
+empty$ -- 214
+format.name$ -- 34
+if$ -- 477
 int.to.chr$ -- 0
-int.to.str$ -- 3
-missing$ -- 0
-newline$ -- 12
-num.names$ -- 3
-pop$ -- 21
+int.to.str$ -- 11
+missing$ -- 2
+newline$ -- 37
+num.names$ -- 11
+pop$ -- 77
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 0
-skip$ -- 13
+skip$ -- 70
 stack$ -- 0
-substring$ -- 0
-swap$ -- 0
+substring$ -- 18
+swap$ -- 19
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
 type$ -- 0
 warning$ -- 0
-while$ -- 3
-width$ -- 4
-write$ -- 23
+while$ -- 12
+width$ -- 13
+write$ -- 82
+(There was 1 warning)

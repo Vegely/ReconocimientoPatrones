@@ -5,14 +5,6 @@
 \contentsline {section}{\numberline {2}Fundamentos de funcionamiento de la red Yolo}{3}{}%
 \contentsline {subsection}{\numberline {2.1}Neurona de la red Yolo}{3}{}%
 \contentsline {subsection}{\numberline {2.2}Topología de la red}{5}{}%
-\contentsline {subsection}{\numberline {2.3}Reglas de entrenamiento}{8}{}%
-\contentsline {section}{\numberline {3}Desarrollo}{8}{}%
-\contentsline {section}{\numberline {4}Resultados}{8}{}%
-\contentsline {section}{\numberline {A}Trabajo realizado con IA}{9}{}%
-\contentsline {subsection}{\numberline {A.1}Redes Convolucionales}{9}{}%
-\contentsline {subsection}{\numberline {A.2}Metodología Yolo}{9}{}%
-\contentsline {subsection}{\numberline {A.3}Neurona de la red Yolo}{9}{}%
-\contentsline {subsection}{\numberline {A.4}Topología de la red}{9}{}%
-\contentsline {subsection}{\numberline {A.5}Reglas de entrenamiento}{9}{}%
-\contentsline {subsection}{\numberline {A.6}Desarrollo: Aplicación en Imágenes Térmicas}{9}{}%
-\contentsline {subsection}{\numberline {A.7}Resultados}{10}{}%
+\contentsline {subsection}{\numberline {2.3}Reglas de entrenamiento}{9}{}%
+\contentsline {section}{\numberline {3}Desarrollo}{9}{}%
+\contentsline {section}{\numberline {4}Resultados}{9}{}%

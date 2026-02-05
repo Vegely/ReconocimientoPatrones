@@ -57,6 +57,8 @@
 	\newpage
 
 	\section{Introducción a la clasificación de imágenes térmicas}
+	
+	Usamos la version YOLO v5 \cite{yolov5}
 	Explicar el estado del arte un poco de que hay y tal.... redes tal, este otro tipo de clasificación
 	\subsection{Redes Convolucionales...}
 	\subsection{Metodología Yolo}
@@ -248,7 +250,9 @@
 	\end{equation}
 	\newpage
 	\subsection{Topología de la red}
+	En esta sección tras analizar los artículos principales de los creadores de Yolo \cite{redmon2016lookonceunifiedrealtime}\cite{redmon2016yolo9000betterfasterstronger}\cite{redmon2018yolov3incrementalimprovement}\cite{bochkovskiy2020yolov4optimalspeedaccuracy} y el diagrama de la red mediante la herramienta \textit{Netron}
 	
+	Para el blocke resnet \cite{he2015deepresiduallearningimage} de la figura \ref{fig:standard_bottleneck}
 	\begin{figure}[H]
 		\centering
 		
@@ -358,6 +362,7 @@
 		\label{fig:standard_bottleneck}
 	\end{figure}
 	
+	Para elaborar el bloque \ref{fig:csp_bottleneck} se usa el artículo \cite{wang2019cspnetnewbackboneenhance}
 	\begin{figure}[H]
 		\centering
 		\resizebox{\linewidth}{!}{
@@ -471,10 +476,11 @@
 		\end{tikzpicture}
 		}
 		% --- Caption serves as Title ---
-		\caption{Architecture of the CSP Bottleneck (YOLOv5 C3 Module)}
+		\caption{Architecture of the CSP (YOLOv5 C3 Module)}
 		\label{fig:csp_bottleneck}
 	\end{figure}
 	
+	Para elaborar el bloque \ref{fig:c3_final} se usa el artículo \cite{wang2019cspnetnewbackboneenhance}
 	\begin{figure}[H]
 		\centering
 		\resizebox{\linewidth}{!}{
@@ -592,10 +598,12 @@
 		
 		\end{tikzpicture}
 		}
-		\caption{Arquitectura del Módulo C3-k (con CV de entrada y repetición)}
+		\caption{Arquitectura del Módulo CSPResNe(X)t o C3-k}
 		\label{fig:c3_final}
 	\end{figure}
 	
+	
+	To enlarge the receptive field and fuse features at different scales, we employ the Spatial Pyramid Pooling - Fast (SPPF) module. This is an optimized implementation of the original Spatial Pyramid Pooling (SPP) proposed by He et al. \cite{He_2014}.While the original SPP processes features through parallel pooling windows of sizes $k=\{1, 5, 9, 13\}$, SPPF achieves the same mathematical result by sequentially passing the input through multiple $5\times5$ max-pooling layers. This sequential structure, introduced in the YOLOv5 architecture \cite{yolov5}, significantly reduces computational latency while preserving the multi-scale feature fusion capability." \ref{fig:sppf_cascade} 
 	\begin{figure}[H]
 		\centering
 		
@@ -723,11 +731,140 @@
 				
 			\end{tikzpicture}
 		}
-		\caption{Arquitectura SPPF en Cascada (Staircase Flow)}
+		\caption{Arquitectura SPP en Cascada}
 		\label{fig:sppf_cascade}
 	\end{figure}
 	
+	
+	La estructura de la cabeza \ref{fig:yolo_head_detail} puede explicarse directamente a través de los artículos de Yolo
+	\begin{figure}[H]
+		\centering
+		\shorthandoff{<}\shorthandoff{>}
+		
+		\resizebox{\linewidth}{!}{
+			\begin{tikzpicture}[
+				node distance=1.5cm and 2.0cm, 
+				% --- ESTILOS ---
+				cvblock/.style={
+					rectangle, draw, rounded corners, fill=cyan!10, drop shadow,
+					minimum width=2.0cm, minimum height=1.2cm, align=center, font=\bfseries\sffamily\scriptsize
+				},
+				concatblock/.style={
+					rectangle, draw, fill=orange!20, drop shadow,
+					minimum width=1.2cm, minimum height=4.5cm, align=center, font=\bfseries\sffamily\small
+				},
+				opnode/.style={
+					circle, draw, fill=gray!10, drop shadow, thick,
+					minimum size=1.2cm, align=center, font=\bfseries\sffamily\large
+				},
+				line/.style={
+					draw, -Latex, thick, color=darkgray, rounded corners=5pt
+				},
+				dimlabel/.style={
+					font=\sffamily\tiny, color=darkgray, align=center, auto, fill=white, inner sep=1pt
+				},
+				dot/.style={
+					circle, fill=darkgray, inner sep=0pt, minimum size=4pt
+				}
+				]
+				
+				% ==========================================
+				% 1. Entrada y Convolución Inicial (Wi)
+				% ==========================================
+				\node (input_i) at (0,0) {\Large $i$};
+				\node [opnode, right=1.0cm of input_i] (wi_node) {$W_i$};
+				\draw [line] (input_i) -- (wi_node);
+				
+				% ==========================================
+				% 2. Primer Reshape y Activación
+				% ==========================================
+				\node [cvblock, right=3.0cm of wi_node] (reshape1) {Reshape};
+				\draw [line] (wi_node) -- node[dimlabel] {$1 \times 255 \times H \times W$} (reshape1);
+				
+				\node [opnode, right=1.5cm of reshape1] (sigma_node) {$\sigma$};
+				\draw [line] (reshape1) -- coordinate (mid) (sigma_node);
+				\draw [thin, darkgray] (mid) -- ++(0, 0.6) node[dimlabel, anchor=south] {$3 \times H \times W \times 85$};
+				
+				% ==========================================
+				% 3. División en 3 Ramas y Primer Concat
+				% ==========================================
+				\node [concatblock, right=6.0cm of sigma_node] (concat1) {Concat};
+				
+				% --- MODIFICATION START ---
+				
+				% 1. Define Coords block to span Middle (y=0) and Bottom (y=-1.5)
+				% We position it halfway horizontally, and shift it down by 0.75cm vertically
+				% We also increase height to 2.5cm to cover both "lanes"
+				\node [cvblock, minimum height=2.8cm] (coords) at ($(sigma_node)!0.5!(concat1) + (0, -0.75)$) {Coords};
+				
+				% 2. Split Point
+				\coordinate (split_sigma) at ($(sigma_node.east) + (1.0, 0)$);
+				\draw [line] (sigma_node) -- (split_sigma);
+				\node [dot] at (split_sigma) {};
+				
+				% 3. Concat Inputs
+				\coordinate (concat1_in1) at ($(concat1.west) + (0, 1.5)$);
+				\coordinate (concat1_in2) at (concat1.west); % Middle input
+				\coordinate (concat1_in3) at ($(concat1.west) + (0, -1.5)$); % Bottom input
+				
+				% --- Branch 1: Top (Classes) ---
+				\draw [line] (split_sigma) |- (concat1_in1) 
+				node[dimlabel, pos=0.7] {$3 \times H \times W \times 81$} 
+				node[at end, left, font=\tiny, xshift=-3pt,yshift=5] {1};
+				
+				% --- Branches 2 & 3: Coords & Objectness (Going through the big block) ---
+				
+				% Labels centered on the block (between the lines)
+				%\node [dimlabel] at ($(split_sigma)!0.5!(coords.west)$) {$3 \times H \times W \times 4$};
+				\node [dimlabel] at ($(coords.east)!0.5!(concat1.west |- coords.east)$) {$3 \times H \times W \times 4$};
+				
+				% Drawing the lines passing through
+				% Middle Line (Branch 2)
+				\draw [line] (split_sigma) -- (split_sigma |- coords.west) -- (coords.west |- split_sigma); % Enters block
+				\draw [line] (coords.east |- concat1_in2) -- (concat1_in2) node[at end, left, font=\tiny, xshift=-3pt,yshift=5] {2}; % Exits block
+				
+				% Bottom Line (Branch 3)
+				\draw [line] (split_sigma) |- (coords.west |- concat1_in3); % Enters block
+				\draw [line] (coords.east |- concat1_in3) -- (concat1_in3) node[at end, left, font=\tiny, xshift=-3pt,yshift=5] {3}; % Exits block
+				
+				% --- MODIFICATION END ---
+				
+				% ==========================================
+				% 4. Segundo Reshape y Concat Final
+				% ==========================================
+				\node [cvblock, right=1.5cm of concat1] (reshape2) {Reshape};
+				\draw [line] (concat1) -- (reshape2);
+				
+				\node [concatblock, right=2.0cm of reshape2, minimum height=2.5cm] (concat2) {\(\text{Concat}_{\text{i}}\)};
+				\draw [line] (reshape2) -- (concat2.west);
+				
+				% Linea de retorno 'i'
+
+				
+				% ==========================================
+				% 5. Salida Final
+				% ==========================================
+				\node [right=1.5cm of concat2] (final_out) {};
+				\draw [line] (concat2.east) -- (final_out) node[midway, above, font=\sffamily\scriptsize,xshift=-80] {$K_i \times 85$};
+				\path (concat2.east) -- (final_out) node[midway, above, font=\sffamily\scriptsize] {Salida};
+				
+				\node [draw, dashed, fill=white, rounded corners, font=\sffamily, align=left, anchor=north, at={($(coords) + (0, -2)$)}] {
+					\textbf{Leyenda:}\\
+					$\mathbf{W}_i$:  Convolución de tamaño \(255\times i\cdot 128\times1\times1\)\\
+					$\mathbf{\sigma}$: Función de activación Relu.\\
+					\textbf{Reshape}: Bloque que transforma las dimensiones de los tensores\\
+					\textbf{Coords}: Bloque encargado de realizar las operaciones necesarias para transformar a coordenadas absolutas\\
+					\textbf{Concat}: Concatenador de cadenas
+				};
+			\end{tikzpicture}
+		}
+		\caption{Detalle de la Cabeza de Detección (YOLO Head)}
+		\label{fig:yolo_head_detail}
+	\end{figure}
+	
 	\newpage
+	
+	La implementación final se obtiene del análisis de la estructura \ref{fig:yolo_vertical_start}
 	\begin{figure}[H] % [p] fuerza una página dedicada si es necesario
 		\centering
 		
@@ -845,8 +982,8 @@
 				
 				
 				% --- Nivel 2: Bajada P4 ---
-				\node [resizeblock, below=1.0cm of cv_mid] (resize2) {Resize};
-				\draw [line] (cv_mid) -- (resize2);
+				\node [below=1.0cm of cv_mid] (resize2) {};
+			
 				
 				% CSP Inferior (Fusiona P4 + P3)
 				% Lo alineamos verticalmente con el punto de split de C3-2 (izquierda)
@@ -880,15 +1017,24 @@
 				\node [cspblock] (csp3) at (resize2 |- cv_cross) {CSP};
 				
 				% 1. Trazamos la línea vertical RECTA desde Resize2 hasta CSP3
-				\draw [line] (resize2.south) -- (csp3.north) node[midway, right, font=\small,yshift=-20,xshift=-15] {1};
+				\draw [line] (cv_mid.south) -- (csp3.north) node[midway, right, font=\small,yshift=-40,xshift=-15] {1};
 				
 				% 2. Definimos el punto de intersección justo en la mitad de esa línea
 				\coordinate (punto_cruce) at (resize2.south |- csp2.east);
 				\node [dot] at (punto_cruce) {};
 				
 				% 3. Trazamos la línea perpendicular hacia la izquierda (a CSP2)
-				\draw [line] (punto_cruce) -- (csp2.east) node[midway, above, font=\small,xshift=-70] {2};
 				
+				%\draw [line] (punto_cruce) -- (csp2.east) node[midway, above, font=\small,xshift=-70] {2};
+				
+				% 1. Position the Resize block exactly in the middle of the path
+				\path (punto_cruce) -- node[resizeblock] (resize10) {Resize} (csp2.east);
+				
+				% 2. Line from intersection to Resize block
+				\draw [line] (punto_cruce) -- (resize10);
+				
+				% 3. Line from Resize block to CSP2 (carrying the label)
+				\draw [line] (resize10) -- (csp2.east) node[midway, above, font=\small,xshift=-20] {2};
 				
 				% Conexión 2: Desde cv_cross (Lateral)
 				\draw [line] (cv_cross.east) -- (csp3.west) node[midway, above, font=\small,xshift=20] {2};
@@ -939,12 +1085,12 @@
 				font=\sffamily\scriptsize, align=left, anchor=north west, 
 				at={($(c3_2.south) + (5, 6.0)$)}] {
 					\textbf{Leyenda:}\\
-					 \textbf{CV}: Convolución (Conv2d+BN+SiLU)\\
+					 \textbf{CV}: Convolución \\
 					 \textbf{C3}: Módulo CSP Bottleneck\\
+					 \textbf{C3-k}:\\
 					\textbf{SPPF}: Pirámide Espacial (Pooling)\\
 					\textbf{CSP}: Módulo de Fusión (Neck)\\
-					\textbf{Resize}: Upsample / Redimensionado\\
-					\textbf{1, 2}: Orden de concatenación en el flujo
+					\textbf{Resize}: Upsample / Redimensionado...
 				};
 			\end{tikzpicture}
 		
@@ -958,45 +1104,5 @@
 	\bibliographystyle{ieeetr}
 	\bibliography{bibliografia} 
 	
-	\appendix
-	\newpage
-	\section{Trabajo realizado con IA}
-	\subsection{Redes Convolucionales}
-	Las Redes Neuronales Convolucionales (CNN) operan bajo el principio de invarianza espacial, permitiendo que el sistema identifique patrones independientemente de su posición en la imagen térmica. En el contexto de termografía, donde las texturas son más suaves que en el espectro visible, la red se apoya en kernels de convolución para detectar firmas de calor específicas, extrayendo características desde niveles básicos (puntos calientes) hasta semánticos (siluetas humanas).
 	
-	\subsection{Metodología Yolo}
-	La metodología YOLO propone un enfoque de "disparo único" (\textit{single-shot}). A diferencia de sistemas R-CNN, YOLO divide la imagen térmica en una rejilla de $S \times S$. Si el centro de un objeto térmico cae en una celda, esa celda es responsable de su detección. Esto reduce drásticamente la latencia, permitiendo el monitoreo de incendios o personas en tiempo real.
-	
-	
-	
-	\subsection{Neurona de la red Yolo}
-	Cada neurona en las capas de predicción genera un vector de salida que contiene la probabilidad de clase $P(C)$ y los parámetros de la caja delimitadora. Para imágenes térmicas, se ajusta el umbral de confianza (\textit{threshold}) para evitar falsos positivos producidos por fuentes de calor estáticas (como maquinaria o motores).
-	
-	\subsection{Topología de la red}
-	La estructura se organiza en bloques funcionales que procesan la señal térmica:
-	\begin{itemize}
-		\item \textbf{Capa de Convolución:} Representada comúnmente como \texttt{cvblock} , extrae rasgos térmicos.
-		\item \textbf{Max Pooling:} El bloque \texttt{mpblock} reduce la dimensionalidad.
-		\item \textbf{ResNet Blocks:} Los \texttt{resnetblock} permiten entrenar redes profundas sin degradación del gradiente.
-		\item \textbf{Concatenación:} Los \texttt{concatblock}  fusionan mapas de características de diferentes escalas.
-	\end{itemize}
-	
-	\subsection{Reglas de entrenamiento}
-	El entrenamiento se realiza mediante el cálculo de la Intersección sobre la Unión (IoU) entre la predicción y el \textit{ground truth} térmico. Se utilizan funciones de pérdida como CIoU que consideran la distancia entre centros, la escala y el aspecto de la caja de detección.
-	
-	\subsection{Desarrollo: Aplicación en Imágenes Térmicas}
-	Para usar YOLO con imágenes térmicas, el proceso técnico seguido es:
-	\begin{enumerate}
-		\item \textbf{Conversión de Datos:} Transformación de las lecturas de temperatura radiométrica a una escala de grises de 8 bits para compatibilidad con la arquitectura estándar.
-		\item \textbf{Aumento de Datos Especializado:} Inserción de ruido gaussiano para simular condiciones atmosféricas adversas que afectan la señal infrarroja.
-		\item \textbf{Entrenamiento:} Ajuste del modelo sobre un dataset de $640 \times 640$ píxeles, optimizando los pesos para detectar firmas térmicas en entornos nocturnos.
-	\end{enumerate}
-	
-	\subsection{Resultados}
-	Los resultados muestran que el modelo YOLO es capaz de distinguir entre un ser vivo y un objeto inanimado con una temperatura similar gracias al análisis morfológico.
-	\begin{itemize}
-		\item \textbf{Precisión Media (mAP):} 0.91 en la detección de peatones en oscuridad total.
-		\item \textbf{Velocidad:} Tiempo de inferencia de 22ms por cuadro.
-		\item \textbf{Conclusión:} La combinación de YOLO y sensores térmicos ofrece una solución robusta para vigilancia donde la luz visible es insuficiente.
-	\end{itemize}
 \end{document}
