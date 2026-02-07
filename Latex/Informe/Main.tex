@@ -250,7 +250,7 @@
 	\end{equation}
 	\newpage
 	\subsection{Topología de la red}
-	En esta sección tras analizar los artículos principales de los creadores de Yolo \cite{redmon2016lookonceunifiedrealtime}\cite{redmon2016yolo9000betterfasterstronger}\cite{redmon2018yolov3incrementalimprovement}\cite{bochkovskiy2020yolov4optimalspeedaccuracy} y el diagrama de la red mediante la herramienta \textit{Netron} donde se introduce la red en formato \textit{.onnx} y se analiza su diagrama que tiene una forma similar al de la figura \ref{fig:fotoneutron}.
+	En esta sección se discute la topología de la red tras analizar los artículos principales de los creadores de Yolo \cite{redmon2016lookonceunifiedrealtime}\cite{redmon2016yolo9000betterfasterstronger}\cite{redmon2018yolov3incrementalimprovement}\cite{bochkovskiy2020yolov4optimalspeedaccuracy} y su diagrama de conexión mediante la herramienta \textit{Netron} donde se introduce la red en formato \textit{.onnx} para su análisis, un ejemplo de parte de la red se puede ver en la figura \ref{fig:fotoneutron}.
 	
 	\begin{figure}[H]
 		\centering
@@ -372,12 +372,12 @@
 			% CHANGE THE NUMBERS BELOW TO MOVE THE BOX: (X, Y)
 			at={($(cv2) + (-0.5, -2.2)$)}] {
 				\textbf{Leyenda:}\\
-				\textbf{CV}: Neurona convolucional\\
-				\textbf{$\Sigma$}: Suma elemento a elemento\\
-				\textbf{C}: Número de canales\\
+				\textbf{CV}: Capa convolucional.\\
+				\textbf{$\Sigma$}: Suma elemento a elemento.\\
+				\textbf{C}: Número de canales.\\
 				\textbf{H,W}: Ancho y alto de los mapas de características.\\
-				$W_{A}=\{C, C, 1, 1\}$: Reduce/Procesa canales (1x1)\\
-				$W_{B}=\{C, C, 3, 3\}$: Extracción características (3x3)
+				$W_{A}=\{C, C, 1, 1\}$: Pesos capa de entrada que reduce/procesa canales.\\
+				$W_{B}=\{C, C, 3, 3\}$: Pesos capa de extracción características.
 			};
 			
 		\end{tikzpicture}
@@ -390,253 +390,286 @@
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.7\linewidth]{fotoResNet}
-		\caption{Representación del error de entrenamiento en función del número de capas. A la izquierda se representa una arquitectura con capas apiladas y a la derecha una arquitectura de capas apiladas utilizando el bloque ResNet.}
+		\caption{Representación del error de entrenamiento en función del número de capas. A la izquierda se representa una arquitectura con capas apiladas y a la derecha una arquitectura de capas apiladas utilizando el bloque ResNet. Figura extraída de \cite{he2015deepresiduallearningimage}.}
 		\label{fig:fotoresnet}
 	\end{figure}
 	
+	El siguiente bloque básico dentro de la arquitectura Yolo es el bloque CSP o C3. La filosofía detrás del bloque representado en la figura \ref{fig:csp_bottleneck} se basa en el artículo \cite{wang2019cspnetnewbackboneenhance}. Este componente, se diseña para mejorar la ineficiencia dentro de las redes convolucionales asociada a la duplicidad de información en el gradiente.	Esta problemática, se debe a que los gradientes de retropropagación se copian y repiten a través de las diferentes capas, lo que genera cálculos redundantes que no contribuyen significativamente al aprendizaje de características nuevas. Para mitigarlo la arquitectura CSP envía el mapa de características de entrada a través de los canales base $C$ para procesarlo en dos ramas en paralelo.
+	\newline
 	
-	Para elaborar el bloque \ref{fig:csp_bottleneck} se usa el artículo \cite{wang2019cspnetnewbackboneenhance}
+	 Como se observa en la figura \ref{fig:csp_bottleneck}, tras la concatenación de entrada, el flujo se bifurca. Una rama principal procesa la información mediante una secuencia de capas convolucionales (representadas por los pesos $W_1$, $W_2$ y $W_3$), mientras que una rama parcial conecta directamente la entrada con el final del bloque a través de una única capa (peso $W_1$ inferior). Esta división permite que el gradiente se propague por dos caminos distintos, aumentando la variabilidad del aprendizaje y reduciendo la cantidad de operaciones. Por tanto, dada una entrada \(x\),  la red procesa obtiene el tensor de salida \(y\) como la concatenación de las dos ramas en paralelo:
+	
+	\begin{equation} 
+		y = \mathcal{T}[\mathcal{F}(x)|| \mathcal{G}(x)]
+	\end{equation}
+	donde \(\mathcal{T}\) es la convolución de la capa de salida que sirve para fusionar la información proveniente de los dos canales concatenados \(\mathcal{F}(x)|| \mathcal{G}(x)\), la transformación \(\mathcal{F}(x)\) realizada por la capa convolucional \(W_1\) sirve para fusionar la información proveniente de los dos canales de entrada y la transformación \(\mathcal{G}(x)\) consiste en extraer características mediante la capa convolucional \(W_3\) que trabaja con un mapa de características comprimido en la capa \(W_2\).
+	\newline
+	
+	Por tanto, este bloque es una forma de poder reciclar el cálculo de gradientes de compresión de canales para poder tener una capa especializada únicamente en la extracción de características \(W_3\).   Para finalmente en la capa \(W_4\) combinar el contexto global de la imagen proveniente de la rama inferior con las características extraídas en la capa superior.
+	
 	\begin{figure}[H]
 		\centering
-		\resizebox{\linewidth}{!}{
-		% --- TikZ Setup ---
-		\begin{tikzpicture}[
-			node distance=1.5cm,
-			% --- Styles ---
-			cvblock/.style={
-				rectangle, draw, rounded corners, fill=cyan!10, drop shadow,
-				minimum width=1.2cm, minimum height=1.2cm, align=center, font=\bfseries\sffamily\scriptsize
-			},
-			concatblock/.style={
-				rectangle, draw, fill=orange!20, drop shadow,
-				minimum width=1cm, minimum height=3.5cm, align=center, font=\bfseries\sffamily\small
-			},
-			line/.style={
-				draw, -Latex, thick, color=darkgray
-			},
-			dimlabel/.style={
-				font=\sffamily\tiny, color=gray, align=center, auto
-			}
-			]
-			
-			% --- 1. Entry Concatenator ---
-			\node [concatblock, label=below:\sffamily\scriptsize In Concat] (concat_in) {CONCAT};
-			
-			% Inputs to Entry Concat
-			\draw [line] ($(concat_in.west) + (-2, 0.5)$) -- node[above, font=\tiny] {In 1} ($(concat_in.west) + (0, 0.5)$);
-			\draw [line] ($(concat_in.west) + (-2, -0.5)$) -- node[below, font=\tiny] {In 2} ($(concat_in.west) + (0, -0.5)$);
-			
-			% --- 2. Top Branch (Main Processing: 3 CVs) ---
-			% Position relative to entry concat
-			\node [cvblock, above right=0.0cm and 1.5cm of concat_in] (top1) {CV\\$W_{1}$};
-			\node [cvblock, right=0.8cm of top1] (top2) {CV\\$W_{2}$};
-			\node [cvblock, right=0.8cm of top2] (top3) {CV\\$W_{3}$};
-			
-			% --- 3. Bottom Branch (Shortcut: 1 CV) ---
-			% Positioned centrally below the top chain for symmetry
-			% We align it horizontally with top2 so it looks balanced
-			\node [cvblock, below=3.5cm of top2] (bot1) {CV\\$W_{1}$};
-			
-			% --- Connections from Entry Concat to Branches ---
-			\coordinate (split_point) at ($(concat_in.east) + (0.5, 0)$);
-			
-			% 1. Draw the line (Clean, no text)
-			\draw [line] (concat_in.east) -- (split_point);
-			
-			% 2. Draw the text (Separately)
-			% We place it exactly halfway (0.5) between concat_in and split_point
-			\node [dimlabel, above, yshift=-6pt] at ($(concat_in.east)!2.6!(split_point)$) {$2C \times H \times W$};
-			
-			\node [dimlabel, above, yshift=-8pt] at ($(concat_in.east)!-6!(split_point)$) {Tamaño Entrada\\$C \times H \times W$};
-			
-			% To Top (No text)
-			\draw [line] (split_point) |- (top1.west);
-			
-			% To Bottom (No text)
-			\draw [line] (split_point) |- (bot1.west);
-			
-			% --- Connections within branches ---
-			% Top chain
-			\draw [line] (top1) -- (top2);
-			\draw [line] (top2) -- (top3);
-			
-			% --- 4. Output Concatenator ---
-			\node [concatblock, right=9cm of concat_in, label=below:\sffamily\scriptsize Out Concat] (concat_out) {CONCAT};
-			
-
-			
-			% FIX: Define a shared vertical axis for the bend (0.8cm to the right of top3)
-			% This ensures both lines turn at the exact same X-coordinate
-			\coordinate (turn_axis) at ($(top3.east) + (0.8, 0)$);
-			
-			% Connect Top Branch (Path 1)
-			\coordinate (in_top) at ($(concat_out.west) + (0, 0.6)$);
-			
-			% Draw: (Start) -- (Go to Axis) |- (Target)
-			% The syntax (source -| turn_axis) finds the intersection point (axis X, source Y)
-			\draw [line] (top3.east) -- (top3.east -| turn_axis) |- (in_top) node[left, font=\tiny, xshift=-2pt,yshift=-5pt] {(1)}; 
-			
-			% Connect Bottom Branch (Path 2)
-			\coordinate (in_bot) at ($(concat_out.west) + (0, -0.6)$);
-			
-			% Draw: Same logic, it will extend the line further to hit the same axis
-			\draw [line] (bot1.east) -- (bot1.east -| turn_axis) |- (in_bot) node[left, font=\tiny, xshift=-2pt,yshift=5pt] {(2)};
-			% --- Legend / Info Box ---
-			% --- 5. Final Transition & Output ---
-			% Add the final CV block after Concat
-			\node [cvblock, right=1.0cm of concat_out] (final_cv) {CV\\$W_{4}$};
-			\draw [line] (concat_out.east) -- (final_cv.west);
-			
-			% Draw the final outgoing line
-			\node [right=1.5cm of final_cv] (final_out) {};
-			\draw [line] (final_cv.east) -- (final_out);
-			
-			% Label the preservation of size at the very end
-			\node [dimlabel, above] at ($(final_cv.east)!0.5!(final_out)$) {Tamaño Salida\\$C \times H \times W$\\(Preservada)};
-			
-			\node [draw, dashed, fill=white, rounded corners, below=0.5cm of bot1, font=\sffamily\scriptsize, align=left] {
-				\textbf{Leyenda:}\\
-				\textbf{CV}: Neurona convolucional\\
-				\textbf{Concat}: Concatenador de cadenas\\
-				\textbf{C}: Número de canales\\
-				\textbf{H,W}: Ancho y alto de los mapas de características.\\
-				$W_{1}=\{C/2,2C,1,1\}$: Pesos neuronas de entrada para ...\\
-				$W_{2}=\{C/2,C/2,1,1\}$: Pesos neurona de...\\
-				$W_{3}=\{C/2,C/2,3,3\}$: Pesos neurona de...\\
-				$W_{4}=\{C,C,1,1\}$: Pesos neurona de salida para...
-			};
-			
-		\end{tikzpicture}
+		\resizebox{0.8\linewidth}{!}{
+			% --- TikZ Setup ---
+			\begin{tikzpicture}[
+				node distance=1.5cm,
+				% --- Styles ---
+				cvblock/.style={
+					rectangle, draw, rounded corners, fill=cyan!10, drop shadow,
+					minimum width=1.2cm, minimum height=1.2cm, align=center, font=\bfseries\sffamily\scriptsize
+				},
+				concatblock/.style={
+					rectangle, draw, fill=orange!20, drop shadow,
+					minimum width=1cm, minimum height=3.5cm, align=center, font=\bfseries\sffamily\small
+				},
+				line/.style={
+					draw, -Latex, thick, color=darkgray
+				},
+				dimlabel/.style={
+					font=\sffamily\tiny, color=gray, align=center, auto
+				}
+				]
+				
+				% --- 1. Entry Concatenator ---
+				\node [concatblock, label=below:\sffamily\scriptsize In Concat] (concat_in) {CONCAT};
+				
+				% Inputs to Entry Concat
+				\draw [line] ($(concat_in.west) + (-2, 0.5)$) -- node[above, font=\tiny] {In 1} ($(concat_in.west) + (0, 0.5)$);
+				\draw [line] ($(concat_in.west) + (-2, -0.5)$) -- node[below, font=\tiny] {In 2} ($(concat_in.west) + (0, -0.5)$);
+				
+				% --- 2. Top Branch (Main Processing: 3 CVs) ---
+				% Position relative to entry concat
+				\node [cvblock, above right=0.0cm and 1.5cm of concat_in] (top1) {CV\\$W_{1}$};
+				\node [cvblock, right=0.8cm of top1] (top2) {CV\\$W_{2}$};
+				\node [cvblock, right=0.8cm of top2] (top3) {CV\\$W_{3}$};
+				
+				% --- 3. Bottom Branch (Shortcut: 1 CV) ---
+				% Positioned centrally below the top chain for symmetry
+				% We align it horizontally with top2 so it looks balanced
+				\node [cvblock, below=3.5cm of top2] (bot1) {CV\\$W_{1}$};
+				
+				% --- Connections from Entry Concat to Branches ---
+				\coordinate (split_point) at ($(concat_in.east) + (0.5, 0)$);
+				
+				% 1. Draw the line (Clean, no text)
+				\draw [line] (concat_in.east) -- (split_point);
+				
+				% 2. Draw the text (Separately)
+				% We place it exactly halfway (0.5) between concat_in and split_point
+				\node [dimlabel, above, yshift=-6pt] at ($(concat_in.east)!2.6!(split_point)$) {$2C \times H \times W$};
+				
+				\node [dimlabel, above, yshift=-8pt] at ($(concat_in.east)!-6!(split_point)$) {Tamaño Entrada\\$C \times H \times W$};
+				
+				% To Top (No text)
+				\draw [line] (split_point) |- (top1.west);
+				
+				% To Bottom (No text)
+				\draw [line] (split_point) |- (bot1.west);
+				
+				% --- Connections within branches ---
+				% Top chain
+				\draw [line] (top1) -- (top2);
+				\draw [line] (top2) -- (top3);
+				
+				% --- 4. Output Concatenator ---
+				\node [concatblock, right=9cm of concat_in, label=below:\sffamily\scriptsize Out Concat] (concat_out) {CONCAT};
+				
+				
+				
+				% FIX: Define a shared vertical axis for the bend (0.8cm to the right of top3)
+				% This ensures both lines turn at the exact same X-coordinate
+				\coordinate (turn_axis) at ($(top3.east) + (0.8, 0)$);
+				
+				% Connect Top Branch (Path 1)
+				\coordinate (in_top) at ($(concat_out.west) + (0, 0.6)$);
+				
+				% Draw: (Start) -- (Go to Axis) |- (Target)
+				% The syntax (source -| turn_axis) finds the intersection point (axis X, source Y)
+				\draw [line] (top3.east) -- (top3.east -| turn_axis) |- (in_top) node[left, font=\tiny, xshift=-2pt,yshift=-5pt] {(1)}; 
+				
+				% Connect Bottom Branch (Path 2)
+				\coordinate (in_bot) at ($(concat_out.west) + (0, -0.6)$);
+				
+				% Draw: Same logic, it will extend the line further to hit the same axis
+				\draw [line] (bot1.east) -- (bot1.east -| turn_axis) |- (in_bot) node[left, font=\tiny, xshift=-2pt,yshift=5pt] {(2)};
+				% --- Legend / Info Box ---
+				% --- 5. Final Transition & Output ---
+				% Add the final CV block after Concat
+				\node [cvblock, right=1.0cm of concat_out] (final_cv) {CV\\$W_{4}$};
+				\draw [line] (concat_out.east) -- (final_cv.west);
+				
+				% Draw the final outgoing line
+				\node [right=1.5cm of final_cv] (final_out) {};
+				\draw [line] (final_cv.east) -- (final_out);
+				
+				% Label the preservation of size at the very end
+				\node [dimlabel, above] at ($(final_cv.east)!0.5!(final_out)$) {Tamaño Salida\\$C \times H \times W$\\(Preservada)};
+				
+				\node [draw, dashed, fill=white, rounded corners, below=0.5cm of bot1, font=\sffamily\scriptsize, align=left] {
+					\textbf{Leyenda:}\\
+					\textbf{CV}: Capa convolucional.\\
+					\textbf{Concat}: Concatenador de cadenas.\\
+					\textbf{C}: Número de canales.\\
+					\textbf{H,W}: Ancho y alto de los mapas de características.\\
+					$W_{1}=\{C/2,2C,1,1\}$: Pesos capa de entrada que comprimen la información de los canales de entrada.\\
+					$W_{2}=\{C/2,C/2,1,1\}$: Pesos capa de compresión de dimensiones antes de la extracción de características.\\
+					$W_{3}=\{C/2,C/2,3,3\}$: Pesos capa de extracción de características.\\
+					$W_{4}=\{C,C,1,1\}$: Pesos capa de salida para combinar la información de las características extraídas.
+				};
+				
+			\end{tikzpicture}
 		}
 		% --- Caption serves as Title ---
-		\caption{Architecture of the CSP (YOLOv5 C3 Module)}
+		\caption{Arquitectura del bloque CSP o C3.}
 		\label{fig:csp_bottleneck}
 	\end{figure}
 	
-	Para elaborar el bloque \ref{fig:c3_final} se usa el artículo \cite{wang2019cspnetnewbackboneenhance}
+Una variante fundamental de la arquitectura CSP es el bloque CSPResNe(X)t o C3-k, el cual sustituye las secuencias convolucionales estándar por bloques ResNet para potenciar la extracción de características. Su representación esquemática se detalla en la figura \ref{fig:c3_final}, y su diseño se fundamenta nuevamente en el artículo \cite{wang2019cspnetnewbackboneenhance}. \newline
+
+La filosofía de este diseño reside en la concatenación en serie de bloques ResNet, repetidos un número $k$ de veces según la complejidad de las características a modelar. Esto convierte al bloque C3-k en el mecanismo principal para controlar la profundidad de la red Yolo. Al concentrar la mayor densidad de procesamiento, este módulo se especializa en la extracción profunda de características.
+\newline
+
+En consecuencia, la integración de los módulos ResNet resulta crítica para la estabilidad del entrenamiento. Como se ha discutido previamente, las conexiones residuales mitigan el desvanecimiento del gradiente, permitiendo que el modelo converja y aprenda adecuadamente incluso al aumentar la profundidad de la red. 
+\newline
+
+Analizando el esquema, es relevante destacar la función específica de cada etapa: la capa de entrada $W_1$ actúa como un primer extractor de características superficiales, generando dos proyecciones del canal de entrada (reduciendo la resolución del espacio de características). Posteriormente, las capas $W_2$ se encargan de comprimir estos canales: una rama profundiza en la extracción mediante la serie de \(k\) bloques ResNet, mientras que la otra preserva la señal original. Finalmente, tras la concatenación, la capa $W_3$ fusiona ambos flujos, integrando los detalles finos aprendidos por la red profunda con la estructura general preservada por la rama inferior.
+	
+
 	\begin{figure}[H]
 		\centering
 		\resizebox{\linewidth}{!}{
-		% --- TikZ Setup ---
-		\begin{tikzpicture}[
-			node distance=1.5cm,
-			% --- Styles ---
-			cvblock/.style={
-				rectangle, draw, rounded corners, fill=cyan!10, drop shadow,
-				minimum width=1.2cm, minimum height=1.2cm, align=center, font=\bfseries\sffamily\scriptsize
-			},
-			resnetblock/.style={
-				rectangle, draw, fill=yellow!20, rounded corners, drop shadow,
-				minimum width=1.5cm, minimum height=1.2cm, align=center, font=\bfseries\sffamily\scriptsize
-			},
-			concatblock/.style={
-				rectangle, draw, fill=orange!20, drop shadow,
-				minimum width=1cm, minimum height=3.5cm, align=center, font=\bfseries\sffamily\small
-			},
-			line/.style={
-				draw, -Latex, thick, color=darkgray
-			},
-			dimlabel/.style={
-				font=\sffamily\tiny, color=gray, align=center, auto
-			}
-			]
-			
-			% --- 1. Entrada y CV Inicial ---
-			\node (input_start) {};
-			
-			% CV de Entrada (NUEVO)
-			\node [cvblock] (cv_in) at (0,0) {CV\\$W_{1}$};
-			
-			% Línea desde "nada" hasta CV in
-			\draw [line] ($(cv_in.west) + (-1.5, 0)$) -- node[dimlabel, above] {} (cv_in.west);
-			\node [font=\sffamily\tiny, color=gray, below] 
-			at ($(split_point)!0.5!(sigma_bottom) + (-5.8, 0.75)$) 
-			{$C\times H \times W$};
-			
-			\node [font=\sffamily\tiny, color=gray, below] 
-			at ($(split_point)!0.5!(sigma_bottom) + (-2.8, 0.75)$) 
-			{$2C\times H/2 \times W/2$};
-			% --- 2. Punto de División (Split) ---
-			% El punto de split está justo a la salida de la CV de entrada
-			\coordinate (split_point) at ($(cv_in.east) + (2.0, 0)$);
-			\draw [line] (cv_in.east) -- (split_point);
-			
-			
-			% --- 3. Rama Superior (Procesamiento) ---
-			% CV Rama Superior
-			\node [cvblock, above right=0.5cm and 1.0cm of split_point] (top_cv) {CV\\$W_{2}$};
-			
-			% ResNet Bloque 1
-			\node [resnetblock, right=0.8cm of top_cv] (res1) {Bloque\\ResNet};
-			
-			% ResNet Bloque 2
-			\node [resnetblock, right=1.0cm of res1] (res2) {Bloque\\ResNet};
-			
-			% Conexiones Superiores
-			\draw [line] (split_point) |- (top_cv.west);
-			\draw [line] (top_cv) -- (res1);
-			
-			% FLECHA PUNTEADA ENTRE RESNETS (NUEVO)
-			\draw [line, dashed] (res1) -- (res2);
-			
-			% Llave indicando k veces
-			\draw [decorate, decoration={brace, amplitude=6pt, raise=4pt}, thick, color=darkgray]
-			(res1.north west) -- (res2.north east)
-			node [midway, above=10pt, font=\sffamily\scriptsize\bfseries] {$\times k$ veces};
-			
-			
-			% --- 4. Rama Inferior (Atajo) ---
-			% CV Rama Inferior
-			\node [cvblock, below right=0.5cm and 1.0cm of split_point] (bot_cv) {CV\\$W_{2}$};
-			
-			% Conexión Inferior
-			\draw [line] (split_point) |- (bot_cv.west);
-			
-			
-			% --- 5. Concatenación de Salida ---
-			\node [concatblock, right=1.5cm of res2, yshift=-1.1cm, label=below:\sffamily\scriptsize ] (concat_out) {CONCAT};
-			
-			% Ejes de giro para flechas simétricas
-			\coordinate (turn_axis) at ($(res2.east) + (0.8, 0)$);
-			
-			% Conexión Superior (1)
-			\coordinate (in_top) at ($(concat_out.west) + (0, 0.6)$);
-			\draw [line] (res2.east) -- (res2.east -| turn_axis) |- (in_top) node[left, font=\tiny, xshift=-2pt,yshift=-5pt] {(1)}; 
-			
-			% Conexión Inferior (2)
-			\coordinate (in_bot) at ($(concat_out.west) + (0, -0.6)$);
-			\draw [line] (bot_cv.east) -- (bot_cv.east -| turn_axis) |- (in_bot) node[left, font=\tiny, xshift=-2pt,yshift=5pt] {(2)};
-			
-			
-			% --- 6. CV Final y Salida ---
-			\node [cvblock, right=1.0cm of concat_out] (final_cv) {CV\\$W_{3}$};
-			\draw [line] (concat_out.east) -- (final_cv.west);
-			
-			\node [right=1.5cm of final_cv] (final_out) {};
-			\draw [line] (final_cv.east) -- (final_out);
-			\node [dimlabel, above] at ($(final_cv.east)!0.7!(final_out)$) {Salida\\$2C\times H/2 \times W/2$};
-			
-			
-			% --- 7. Leyenda ---
-			\node [draw, dashed, fill=white, rounded corners, font=\sffamily\scriptsize, align=left, anchor=north, at={($(bot_cv) + (2.5, -1.3)$)}] {
-				\textbf{Leyenda:}\\
-				\textbf{CV}:  Neurona convolucional\\
-				\textbf{Bloque ResNet}: Módulo residual repetido\\
-				\textbf{C}: Número de canales\\
-				\textbf{H,W}: Ancho y alto de los mapas de características.\\
-				$W_{1}=\{2C,C,3,3\}$: Pesos neuronas de entrada para ...\\
-				$W_{2}=\{C,2C,1,1\}$: Pesos neurona de...\\
-				$W_{3}=\{2C,2C,1,1\}$: Pesos neurona de salida para...
-			};
-		
-		\end{tikzpicture}
+			% --- TikZ Setup ---
+			\begin{tikzpicture}[
+				node distance=1.5cm,
+				% --- Styles ---
+				cvblock/.style={
+					rectangle, draw, rounded corners, fill=cyan!10, drop shadow,
+					minimum width=1.2cm, minimum height=1.2cm, align=center, font=\bfseries\sffamily\scriptsize
+				},
+				resnetblock/.style={
+					rectangle, draw, fill=yellow!20, rounded corners, drop shadow,
+					minimum width=1.5cm, minimum height=1.2cm, align=center, font=\bfseries\sffamily\scriptsize
+				},
+				concatblock/.style={
+					rectangle, draw, fill=orange!20, drop shadow,
+					minimum width=1cm, minimum height=3.5cm, align=center, font=\bfseries\sffamily\small
+				},
+				line/.style={
+					draw, -Latex, thick, color=darkgray
+				},
+				dimlabel/.style={
+					font=\sffamily\tiny, color=gray, align=center, auto
+				}
+				]
+				
+				% --- 1. Entrada y CV Inicial ---
+				\node (input_start) {};
+				
+				% CV de Entrada (NUEVO)
+				\node [cvblock] (cv_in) at (0,0) {CV\\$W_{1}$};
+				
+				% Línea desde "nada" hasta CV in
+				\draw [line] ($(cv_in.west) + (-1.5, 0)$) -- node[dimlabel, above] {} (cv_in.west);
+				\node [font=\sffamily\tiny, color=gray, below] 
+				at ($(split_point)!0.5!(sigma_bottom) + (-5.8, 0.75)$) 
+				{$C\times H \times W$};
+				
+				\node [font=\sffamily\tiny, color=gray, below] 
+				at ($(split_point)!0.5!(sigma_bottom) + (-2.8, 0.75)$) 
+				{$2C\times H/2 \times W/2$};
+				% --- 2. Punto de División (Split) ---
+				% El punto de split está justo a la salida de la CV de entrada
+				\coordinate (split_point) at ($(cv_in.east) + (2.0, 0)$);
+				\draw [line] (cv_in.east) -- (split_point);
+				
+				
+				% --- 3. Rama Superior (Procesamiento) ---
+				% CV Rama Superior
+				\node [cvblock, above right=0.5cm and 1.0cm of split_point] (top_cv) {CV\\$W_{2}$};
+				
+				% ResNet Bloque 1
+				\node [resnetblock, right=0.8cm of top_cv] (res1) {Bloque\\ResNet};
+				
+				% ResNet Bloque 2
+				\node [resnetblock, right=1.0cm of res1] (res2) {Bloque\\ResNet};
+				
+				% Conexiones Superiores
+				\draw [line] (split_point) |- (top_cv.west);
+				\draw [line] (top_cv) -- (res1);
+				
+				% FLECHA PUNTEADA ENTRE RESNETS (NUEVO)
+				\draw [line, dashed] (res1) -- (res2);
+				
+				% Llave indicando k veces
+				\draw [decorate, decoration={brace, amplitude=6pt, raise=4pt}, thick, color=darkgray]
+				(res1.north west) -- (res2.north east)
+				node [midway, above=10pt, font=\sffamily\scriptsize\bfseries] {$\times k$ veces};
+				
+				
+				% --- 4. Rama Inferior (Atajo) ---
+				% CV Rama Inferior
+				\node [cvblock, below right=0.5cm and 1.0cm of split_point] (bot_cv) {CV\\$W_{2}$};
+				
+				% Conexión Inferior
+				\draw [line] (split_point) |- (bot_cv.west);
+				
+				
+				% --- 5. Concatenación de Salida ---
+				\node [concatblock, right=1.5cm of res2, yshift=-1.1cm, label=below:\sffamily\scriptsize ] (concat_out) {CONCAT};
+				
+				% Ejes de giro para flechas simétricas
+				\coordinate (turn_axis) at ($(res2.east) + (0.8, 0)$);
+				
+				% Conexión Superior (1)
+				\coordinate (in_top) at ($(concat_out.west) + (0, 0.6)$);
+				\draw [line] (res2.east) -- (res2.east -| turn_axis) |- (in_top) node[left, font=\tiny, xshift=-2pt,yshift=-5pt] {(1)}; 
+				
+				% Conexión Inferior (2)
+				\coordinate (in_bot) at ($(concat_out.west) + (0, -0.6)$);
+				\draw [line] (bot_cv.east) -- (bot_cv.east -| turn_axis) |- (in_bot) node[left, font=\tiny, xshift=-2pt,yshift=5pt] {(2)};
+				
+				
+				% --- 6. CV Final y Salida ---
+				\node [cvblock, right=1.0cm of concat_out] (final_cv) {CV\\$W_{3}$};
+				\draw [line] (concat_out.east) -- (final_cv.west);
+				
+				\node [right=1.5cm of final_cv] (final_out) {};
+				\draw [line] (final_cv.east) -- (final_out);
+				\node [dimlabel, above] at ($(final_cv.east)!0.7!(final_out)$) {Salida\\$2C\times H/2 \times W/2$};
+				
+				
+				% --- 7. Leyenda ---
+				\node [draw, dashed, fill=white, rounded corners, font=\sffamily\scriptsize, align=left, anchor=north, at={($(bot_cv) + (2.5, -1.3)$)}] {
+					\textbf{Leyenda:}\\
+					\textbf{CV}:  Capa convolucional.\\
+					\textbf{Bloque ResNet}: Módulo residual repetido \(k\) veces\\
+					\textbf{C}: Número de canales.\\
+					\textbf{H,W}: Ancho y alto de los mapas de características.\\
+					$W_{1}=\{2C,C,3,3\}$: Pesos capa de entrada para una extracción preliminar de características\\
+					$W_{2}=\{C,2C,1,1\}$: Pesos capa intermedia para la compresión de canales.\\
+					$W_{3}=\{2C,2C,1,1\}$: Pesos capa de salida para combinar la información de la rama de extracción de características con el mapa de características orignal.
+				};
+				
+			\end{tikzpicture}
 		}
-		\caption{Arquitectura del Módulo CSPResNe(X)t o C3-k}
+		\caption{Arquitectura del Módulo CSPResNe(X)t o C3-k.}
 		\label{fig:c3_final}
 	\end{figure}
 	
 	
-	To enlarge the receptive field and fuse features at different scales, we employ the Spatial Pyramid Pooling - Fast (SPPF) module. This is an optimized implementation of the original Spatial Pyramid Pooling (SPP) proposed by He et al. \cite{He_2014}.While the original SPP processes features through parallel pooling windows of sizes $k=\{1, 5, 9, 13\}$, SPPF achieves the same mathematical result by sequentially passing the input through multiple $5\times5$ max-pooling layers. This sequential structure, introduced in the YOLOv5 architecture \cite{yolov5}, significantly reduces computational latency while preserving the multi-scale feature fusion capability." \ref{fig:sppf_cascade} 
+El siguiente bloque relevante en Yolo es el representado en la figura \ref{fig:sppf_cascade} que es una variación optimizada del módulo SPP descrito en el artículo \cite{He_2014}. Esta variación optimizada  se denomina \textit{Spatial Pyramid Pooling Fast} (SPPF). Este módulo, introducido en la arquitectura Yolo \cite{yolov5}, tiene como objetivo principal permitir que la red analice simultáneamente el contexto global de la imagen y los detalles locales mediante una estructura en cascada que optimiza la velocidad de procesamiento.
+\newline
+
+La filosofía original del SPP \cite{He_2014} propone procesar el mapa de características mediante ventanas de pooling en paralelo con diferentes tamaños de kernel ($k=\{1, 5, 9, 13\}$) para capturar contextos de distinto tamaño. Sin embargo, la variante SPPF logra un resultado matemático equivalente mediante una estructura en cascada más eficiente. En lugar de ejecutar múltiples ramas paralelas, pasa la entrada secuencialmente a través de varias capas de Max Pooling de tamaño $5\times5$. El Max Pooling se define como el valor máximo dentro de una ventana deslizante sobre el mapa de características:
+\begin{equation}
+	y_{i,j} = \max_{(m,n) \in \mathcal{R}} x_{i+m, j+n}
+\end{equation}
+donde $\mathcal{R}$ es la región del kernel. El Max Pooling aporta invarianza a pequeñas traslaciones y deformaciones. Al quedarse solo con la característica más más representativa de una región, el modelo se vuelve robusto ante ligeros desplazamientos del objeto, permitiendo reconocer patrones independientemente de su posición exacta dentro de la ventana.
+\newline
+
+Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los canales de entrada a la mitad con el fin de disminuir el coste computacional de las operaciones de pooling subsiguientes. Esta etapa da paso a una estructura secuencial en cascada, donde la salida de cada bloque se bifurca iterativamente: una rama alimenta al siguiente bloque y otra se dirige directamente al concatenador. Finalmente, la capa convolucional $W_2$ integra todas estas proyecciones multiescala, generando una representación unificada y robusta frente a las transformaciones del espacio de características de entrada.
+
+
 	\begin{figure}[H]
 		\centering
 		
@@ -751,25 +784,25 @@
 				
 				
 				% --- 5. Leyenda ---
-				\node [draw, dashed, fill=white, rounded corners, font=\sffamily\scriptsize, align=left, anchor=north west, at={($(mp3.south) + (-8.5, 1)$)}] {
+				\node [draw, dashed, fill=white, rounded corners, font=\sffamily\scriptsize, align=left, anchor=north west, at={($(mp3.south) + (-8.5, -1)$)}] {
 					\textbf{Leyenda:}\\
-					\textbf{CV}: Neurona convolucional\\
-					\textbf{Concat}: Concatenador de cadenas\\
-					\textbf{MP}: MaxPool ($k=5$)\\
-					\textbf{C}: Número de canales\\
+					\textbf{CV}: Capa convolucional.\\
+					\textbf{Concat}: Concatenador de cadenas.\\
+					\textbf{MP}: MaxPool ($k=5$).\\
+					\textbf{C}: Número de canales.\\
 					\textbf{H,W}: Ancho y alto de los mapas de características.\\
-					$W_{1}=\{C/2,C,1,1\}$: Pesos neuronas de entrada para ...\\
-					$W_{2}=\{C,2C,1,1\}$: Pesos neurona de salida para...
+					$W_{1}=\{C/2,C,1,1\}$: Capa convolucional de entrada para comprimir la información de los canales.\\
+					$W_{2}=\{C,2C,1,1\}$: Capa convolucional de salida para obtener la información combinada des Max pooling.
 				};
 				
 			\end{tikzpicture}
 		}
-		\caption{Arquitectura SPP en Cascada}
+		\caption{Arquitectura del  bloque SPPF.}
 		\label{fig:sppf_cascade}
 	\end{figure}
 	
 	
-	La estructura de la cabeza \ref{fig:yolo_head_detail} puede explicarse directamente a través de los artículos de Yolo
+	La estructura de la cabeza \ref{fig:yolo_head_detail} puede explicarse directamente a través de los artículos de Yolodsaaaaa asd bhuasb uidgashd aysbui dkas, 6dawhjkd yuas
 	\begin{figure}[H]
 		\centering
 		\shorthandoff{<}\shorthandoff{>}

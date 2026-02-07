@@ -5,6 +5,6 @@
 \contentsline {section}{\numberline {2}Fundamentos de funcionamiento de la red Yolo}{3}{}%
 \contentsline {subsection}{\numberline {2.1}Neurona de la red Yolo}{3}{}%
 \contentsline {subsection}{\numberline {2.2}Topología de la red}{5}{}%
-\contentsline {subsection}{\numberline {2.3}Reglas de entrenamiento}{10}{}%
-\contentsline {section}{\numberline {3}Desarrollo}{10}{}%
-\contentsline {section}{\numberline {4}Resultados}{10}{}%
+\contentsline {subsection}{\numberline {2.3}Reglas de entrenamiento}{11}{}%
+\contentsline {section}{\numberline {3}Desarrollo}{11}{}%
+\contentsline {section}{\numberline {4}Resultados}{11}{}%
