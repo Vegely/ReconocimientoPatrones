@@ -250,9 +250,34 @@
 	\end{equation}
 	\newpage
 	\subsection{Topología de la red}
-	En esta sección tras analizar los artículos principales de los creadores de Yolo \cite{redmon2016lookonceunifiedrealtime}\cite{redmon2016yolo9000betterfasterstronger}\cite{redmon2018yolov3incrementalimprovement}\cite{bochkovskiy2020yolov4optimalspeedaccuracy} y el diagrama de la red mediante la herramienta \textit{Netron}
+	En esta sección tras analizar los artículos principales de los creadores de Yolo \cite{redmon2016lookonceunifiedrealtime}\cite{redmon2016yolo9000betterfasterstronger}\cite{redmon2018yolov3incrementalimprovement}\cite{bochkovskiy2020yolov4optimalspeedaccuracy} y el diagrama de la red mediante la herramienta \textit{Netron} donde se introduce la red en formato \textit{.onnx} y se analiza su diagrama que tiene una forma similar al de la figura \ref{fig:fotoneutron}.
 	
-	Para el blocke resnet \cite{he2015deepresiduallearningimage} de la figura \ref{fig:standard_bottleneck}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.7\linewidth]{FotoNeutron}
+		\caption{Ejemplo de parte de la red Yolo en la aplicación \textit{Netron}.}
+		\label{fig:fotoneutron}
+	\end{figure}
+	
+	Uno de los bloques que más se repite a lo largo de la arquitectura de la red Yolo es el bloque ResNet, cuya estructura se encuentra representada en la figura \ref{fig:standard_bottleneck}. La filosofía detrás del diseño de este bloque viene detallada en el artículo  \cite{he2015deepresiduallearningimage}, y su objetivo principal se mejorar el rendimiento de las redes neuronales profundas cuando se acumulan múltiples capas.
+	\newline
+	
+	La problemática surge durante el entrenamiento: al acumular múltiples capas consecutivas, los gradientes tienden a explotar. Antes de la existencia de este bloque, esto se mitigaba mediante la normalización en capas intermedias, pero aun así se observaba una degradación en la convergencia. Para entender esta degradación, se puede entender la operación de convolución como una aplicación identidad con cierto ruido superpuesto que representa las características a extraer. Por tanto, mediante una conexión lineal directa se optimiza el comportamiento del método de optimización utilizado, mejorando así la convergencia. 
+	\newline
+	
+	La premisa de que los bloques se comportan como aplicaciones lineales con ruido se demuestra empíricamente en el propio artículo \cite{he2015deepresiduallearningimage}. Aunque se trata más de una heurística que de un argumento formal, en casos reales, como el de la figura \ref{fig:fotoresnet}, presenta un mejor comportamiento que simplemente acumular capas, y solo sería problemático si el objetivo del bloque fuera aproximar la función nula.
+	\newline
+	
+	La interpretación del bloque ResNet como una aplicación lineal con ruido se deduce fácilmente a partir de las ecuaciones del modelo:
+	\begin{equation}
+		y=\mathcal{H}(x)=\mathcal{F}(x)+x
+	\end{equation}
+	donde \(y\) es la salida de aplicar \(\mathcal{H}\) a la entrada \(x\) que se descompone entre una función que representa la convolución \(\mathcal{F}(x)\) y la aplicación líneal directa. Por tanto, se puede asemejar el funcionamiento de las capas convolucionales como un extractor del ruido o características. 
+	\newline
+	
+	Profundizando en el detalle del propio bloque, este está formado por dos capas, donde la primera se encarga de procesar los canales para que la segunda simplemente extraiga las características de los anteriores.
+	
+	
 	\begin{figure}[H]
 		\centering
 		
@@ -358,9 +383,17 @@
 		\end{tikzpicture}
 		
 		% --- Caption serves as Title ---
-		\caption{Architecture of a Standard Residual Bottleneck (ResNet Block)}
+		\caption{Arquitectura de un bloque ResNet.}
 		\label{fig:standard_bottleneck}
 	\end{figure}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.7\linewidth]{fotoResNet}
+		\caption{Representación del error de entrenamiento en función del número de capas. A la izquierda se representa una arquitectura con capas apiladas y a la derecha una arquitectura de capas apiladas utilizando el bloque ResNet.}
+		\label{fig:fotoresnet}
+	\end{figure}
+	
 	
 	Para elaborar el bloque \ref{fig:csp_bottleneck} se usa el artículo \cite{wang2019cspnetnewbackboneenhance}
 	\begin{figure}[H]
