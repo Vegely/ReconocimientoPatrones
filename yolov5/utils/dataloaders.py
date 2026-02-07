@@ -388,7 +388,9 @@ class LoadImages:
         else:
             # Read image
             self.count += 1
-            im0 = cv2.imread(path)  # BGR
+            #im0 = cv2.imread(path)  # BGR
+            im0 = cv2.imread(f, 0)  # 0 = Grayscale
+            im0 = np.expand_dims(im0, axis=2)
             assert im0 is not None, f"Image Not Found {path}"
             s = f"image {self.count}/{self.nf} {path}: "
 
