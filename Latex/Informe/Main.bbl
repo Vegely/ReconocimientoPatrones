@@ -42,4 +42,8 @@ K.~He, X.~Zhang, S.~Ren, and J.~Sun, {\em Spatial Pyramid Pooling in Deep
   Convolutional Networks for Visual Recognition}, p.~346–361.
 \newblock Springer International Publishing, 2014.
 
+\bibitem{long2015fullyconvolutionalnetworkssemantic}
+J.~Long, E.~Shelhamer, and T.~Darrell, ``Fully convolutional networks for
+  semantic segmentation,'' 2015.
+
 \end{thebibliography}

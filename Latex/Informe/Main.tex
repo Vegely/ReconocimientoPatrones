@@ -677,7 +677,7 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 		\shorthandoff{<}
 		\shorthandoff{>}
 		
-			\resizebox{\linewidth}{!}{
+			\resizebox{0.8\linewidth}{!}{
 			\begin{tikzpicture}[
 				node distance=1.0cm,
 				% --- ESTILOS ---
@@ -801,8 +801,32 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 		\label{fig:sppf_cascade}
 	\end{figure}
 	
+	El último bloque funcional de la red Yolo es la cabeza de detección, representada en la figura \ref{fig:yolo_head_detail}. Este módulo está constituido por tres ramas independientes que operan en paralelo, cuyas salidas se procesan para generar el vector final con todas las predicciones de la imagen.
+	\newline
 	
-	La estructura de la cabeza \ref{fig:yolo_head_detail} puede explicarse directamente a través de los artículos de Yolodsaaaaa asd bhuasb uidgashd aysbui dkas, 6dawhjkd yuas
+	La estrategia detrás de este cabezal de procesamiento es el de detección de objetos de diferente tamaño.  Para ello, la cabeza de salida procesa mapas de características en tres resoluciones espaciales distintas, denotadas como $i=\{1, 2, 3\}$, donde cada nivel se especializa en un rango de detección específico:
+	\begin{enumerate}
+		\item \textbf{Nivel $i=1$ (Alta Resolución):} Trabaja con mapas de características de tamaño $80 \times 80$. Al conservar una mayor densidad espacial, esta rama es idónea para la detección de objetos pequeños y detalles finos que se perderían en compresiones mayores.
+		\item \textbf{Nivel $i=2$ (Resolución Media):} Opera con mapas de $40 \times 40$, sirviendo como un punto de equilibrio para la detección de objetos de tamaño medio.
+		\item \textbf{Nivel $i=3$ (Baja Resolución):} Utiliza mapas de características reducidos de $20 \times 20$. Aunque la resolución espacial es menor, cada característica en este mapa contiene información condensada de una gran región de la imagen original, siendo la rama responsable de detectar objetos grandes.
+	\end{enumerate}
+	
+	Internamente, el diseño del cabezal es el factor determinante que permite clasificar a la arquitectura YOLO como una Red Totalmente Convolucional (FCN) \cite{long2015fullyconvolutionalnetworkssemantic}. Esta configuración marca una diferencia sustancial respecto a los detectores clásicos, los cuales finalizaban con capas totalmente conectadas (estructuras tipo perceptrón) que obligaban a redimensionar cualquier imagen de entrada a un tamaño fijo de salida. Por el contrario, en Yolo se sustituyen estas capas por una convolución final de tamaño $1\times1$ que elimina esta restricción dimensional.
+	\newline
+	
+	Esta operación inicial es crítica, ya que actúa como la interfaz de traducción entre el espacio de características latentes y el espacio de predicción. Su función específica es proyectar la profundidad del tensor entrante para que coincida matemáticamente con las dimensiones requeridas en la salida. 
+	\newline
+	
+	A la salida de esta proyección convolucional, el tensor resultante se reestructura para generar, por cada celda de la rejilla espacial, un total de $B=3$ predicciones correspondientes a las cajas de anclaje. Cada predicción genera un vector de características que se somete a la función de activación Sigmoide para normalizar los valores en el rango $[0, 1]$. Este vector de salida se descompone en tres segmentos funcionales:
+	\begin{enumerate}
+		\item Coordenadas de Caja (4 valores): Los primeros cuatro elementos $(t_x, t_y, t_w, t_h)$ representan las coordenadas relativas al anchor y a la celda de la rejilla. Estas se transforman mediante una función de decodificación para obtener las coordenadas absolutas $(x, y)$ del centro y las dimensiones $(w, h)$ de la caja predicha.
+		\item Probabilidad de Objeto (1 valor): Representa la confianza de que exista un objeto dentro de la caja propuesta.
+		\item Probabilidades de Clase ($C$ valores): Las columnas restantes contienen la probabilidad condicional de que el objeto detectado pertenezca a una etiqueta específica.
+	\end{enumerate}
+		
+	Finalmente, el proceso concluye con la concatenación y el reescalado de las predicciones. Las dimensiones del tensor se ajustan permitiendo que todos los vectores de salida, independientemente de la escala de la que provengan, se unifiquen en una única lista predicciones.
+
+	
 	\begin{figure}[H]
 		\centering
 		\shorthandoff{<}\shorthandoff{>}
@@ -918,13 +942,13 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 					\textbf{Leyenda:}\\
 					$\mathbf{W}_i$:  Convolución de tamaño \(255\times i\cdot 128\times1\times1\)\\
 					$\mathbf{\sigma}$: Función de activación Relu.\\
-					\textbf{Reshape}: Bloque que transforma las dimensiones de los tensores\\
-					\textbf{Coords}: Bloque encargado de realizar las operaciones necesarias para transformar a coordenadas absolutas\\
-					\textbf{Concat}: Concatenador de cadenas
+					\textbf{Reshape}: Bloque que transforma las dimensiones de los tensores.\\
+					\textbf{Coords}: Bloque encargado de realizar las operaciones necesarias para transformar a coordenadas absolutas.\\
+					\textbf{Concat}: Concatenador de cadenas.
 				};
 			\end{tikzpicture}
 		}
-		\caption{Detalle de la Cabeza de Detección (YOLO Head)}
+		\caption{Detalle de la Cabeza de Detección.}
 		\label{fig:yolo_head_detail}
 	\end{figure}
 	
