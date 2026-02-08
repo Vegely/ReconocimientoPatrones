@@ -11,11 +11,11 @@
 \contentsline {subsubsection}{\numberline {2.2.3}Head: Detección}{12}{}%
 \contentsline {subsection}{\numberline {2.3}Reglas de entrenamiento}{13}{}%
 \contentsline {subsubsection}{\numberline {2.3.1}Entrenamiento de la red}{14}{}%
-\contentsline {subsubsection}{\numberline {2.3.2}Hiperparámetros}{14}{}%
-\contentsline {paragraph}{Optimización del entrenamiento}{14}{}%
-\contentsline {paragraph}{Fase de calentamiento (\textit {Warmup})}{16}{}%
-\contentsline {paragraph}{Función de pérdida}{16}{}%
-\contentsline {paragraph}{\textit {Data augmentation}}{16}{}%
+\contentsline {subsubsection}{\numberline {2.3.2}Hiperparámetros}{15}{}%
+\contentsline {paragraph}{Optimización del entrenamiento}{15}{}%
+\contentsline {paragraph}{Fase de calentamiento (\textit {Warmup})}{17}{}%
+\contentsline {paragraph}{Función de pérdida}{17}{}%
+\contentsline {paragraph}{\textit {Data augmentation}}{17}{}%
 \contentsline {paragraph}{Evaluación de la red}{17}{}%
-\contentsline {section}{\numberline {3}Desarrollo: Aplicación en Imágenes Térmicas}{17}{}%
-\contentsline {section}{\numberline {4}Resultados}{17}{}%
+\contentsline {section}{\numberline {3}Desarrollo: Aplicación en Imágenes Térmicas}{18}{}%
+\contentsline {section}{\numberline {4}Resultados}{18}{}%

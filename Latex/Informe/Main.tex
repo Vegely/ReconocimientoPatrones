@@ -94,7 +94,8 @@
 	
 	Para el desarrollo del proyecto hemos seleccionado la arquitectura YOLOv5 \cite{yolov5}. Aunque este modelo integra mejoras estructurales muy potentes como el backbone CSP-Darknet y el cuello PANet (detallados en la sección de topología de la red), la razón principal de esta elección ha sido su implementación nativa en Python. Al no depender del framework clásico en C, se puede agilizar la integración con otras librerías y simplificar considerablemente el flujo de trabajo.
 	\section{Fundamentos de funcionamiento de la red YOLO}
-	A continuación se desarrrolla el funcionamiento de la red YOLO mediante la teoría de Marr para lo cuál es necesario describir el nivel implementacional y algoritmico. En este caso las redes neuronales artificiales se componen de 3 componentes que se describirán a continuación:
+	Para comprender cómo funciona YOLO, analizaremos los tres pilares que integran su estructura:
+	
 	\begin{itemize}
 		\item Caracterización de la neurona.
 		\item Definición de una topología de interconexión.
@@ -1237,6 +1238,10 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 				\node [font=\sffamily\small, color=gray, align=center] at ($(head.south) + (0, -1.0)$) {Salida\\$1\times25200\times85$};
 				\node [above=-0.2cm of input, font=\sffamily\small, color=gray, align=center] {Entrada\\$3\times640\times640$};
 				
+				\node [font=\sffamily\small,align=center] at ($(head.south) + (-6.5, 2.0)$) {1};
+				\node [font=\sffamily\small,align=center] at ($(head.south) + (0, 2.0)$) {2};
+				\node [font=\sffamily\small,align=center] at ($(head.south) + (6.5, 2.0)$) {3};
+				
 				\node [draw, dashed, fill=white, rounded corners, 
 				font=\sffamily\scriptsize, align=left, anchor=north west, 
 				at={($(c3_2.south) + (3, 6.0)$)}] {
@@ -1265,7 +1270,7 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	
 	\begin{equation}
 	\begin{aligned}
-	f(x, y, w, h, C, p |\theta) &= \lambda_{\text{coord}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} \left[ (x_i - \hat{x}_i)^2 + (y_i - \hat{y}_i)^2 \right] \\
+	\mathcal{L} &= \lambda_{\text{coord}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} \left[ (x_i - \hat{x}_i)^2 + (y_i - \hat{y}_i)^2 \right] \\
 	& + \lambda_{\text{coord}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} \left[ \left( \sqrt{w_i} - \sqrt{\hat{w}_i} \right)^2 + \left( \sqrt{h_i} - \sqrt{\hat{h}_i} \right)^2 \right] \\
 	& + \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} (C_i - \hat{C}_i)^2 \\
 	& + \lambda_{\text{noobj}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{noobj}} (C_i - \hat{C}_i)^2 \\
@@ -1275,7 +1280,46 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	
 	Donde $\mathds{1}_{i,j}^{\text{obj}}$ indica si un objeto aparece en la $j$-ésima caja de la $i$-ésima celda, $x_i$ e $y_i$ son las coordenadas del centro del objeto, $w_i$ y $h_i$ el ancho y el alto del objeto. La red tiene una confianza $\hat{C}_i = P(\text{Objeto}) \text{IoU}$ de que la caja que ha estimado contiene un objeto, que depende de la probabilidad que asigna a la existencia de dicho objeto. El valor real de la confianza será 0 si no hay objeto o la intersección sobre la unión si lo hay (si fuese 1 se estarían penalizando doblemente los errores de detección). Por último, $\hat{p}_i(c)$ corresponde a un término de clasificación, que representa la probabilidad que la red asigna a que el objeto pertenezca a una determinada clase.
 		
-	Los errores de detección en objetos grandes son menos graves que en los pequeños, por lo que se toma la raíz cuadrada en los términos de detección del ancho y alto para tener en cuenta este efecto. Además, se observan 2 hiperparámetros: $\lambda_{\text{coord}}$ y $\lambda_{\text{noobj}}$. Ambos tienen el propósito de incentivar a la red a detectar objetos aunque
+	Los errores de detección en objetos grandes son menos graves que en los pequeños, por lo que se toma la raíz cuadrada en los términos de detección del ancho y alto para tener en cuenta este efecto. Además, se observan 2 hiperparámetros: $\lambda_{\text{coord}}$ y $\lambda_{\text{noobj}}$. Ambos tienen el propósito de incentivar a la red a predecir cajas aunque se equivoque. Dado que la mayoría de las celdas no contienen objetos, el término correspondiente en la función de pérdida es dominante y YOLO tiende a decir que no hay ningún objetos. Con $\lambda_{\text{coord}}$ se aumenta la penalización al cometer errores de localización y con $\lambda_{\text{noobj}}$ se reduce la importancia de predecir cajas cuando no las hay.
+	
+	La formulación anterior corresponde a YOLOv1. Aunque en este trabajo se esté usando YOLOv5, se considera que dicha ecuación proporciona una buena intuición sobre el funcionamiento de la red. En versiones posteriores se han introducido algunas modificaciones y refinamientos sobre esta idea. La función de pérdida en YOLOv5 considera la entropía cruzada binaria para las pérdidas de clasificación y existencia de objetos, y la intersección sobre la unión completa (CIoU) para las de localización:
+
+	\begin{equation}
+	\begin{aligned}
+	\mathcal{L}
+	&=
+	\lambda_{\text{loc}}\,\mathcal{L}_{\text{loc}}
+	+
+	\lambda_{\text{obj}}\,\mathcal{L}_{\text{obj}}
+	+
+	\lambda_{\text{cls}}\,\mathcal{L}_{\text{cls}} \\
+	&=
+	\lambda_{\text{loc}}\,(1 - \mathrm{CIoU})
+	+
+	\lambda_{\text{obj}}\,\mathrm{BCE}_{\text{obj}}
+	+
+	\lambda_{\text{cls}}\,\mathrm{BCE}_{\text{cls}}
+	\end{aligned}
+	\end{equation}
+
+	Donde $\lambda_{\text{loc}}$, $\lambda_{\text{obj}}$ y $\lambda_{\text{cls}}$ se corresponden con los hiperparámetros \texttt{box}, \texttt{obj} y \texttt{cls}, respectivamente.
+	
+	En vez de estimar directamente las coordenadas del centro del objeto, el ancho y el alto, lo hace de forma relativa a la posición de cada celda\cite{yolov5}:
+	
+	\begin{align}
+	b_x &= (2\sigma(t_x) - 0.5) + c_x \\
+	b_y &= (2\sigma(t_y) - 0.5) + c_y \\
+	b_w &= p_w (2 \sigma(t_w))^2\\
+	b_h &= p_h (2 \sigma(t_h))^2
+	\end{align}
+	
+	Donde $c_x$ y $c_y$ son las coordenadas de la esquina superior izquierda de las celdas. Las salidas de las posiciones de los centros de los objetos se pasan por una sigmoide, de forma que las variaciones $2\sigma(t) - 0.5$ toman valores entre -0.5 y 1.5 (siendo 0 la esquina superior izquierda y 1 la esquina superior derecha). La razón de no restringirlas entre 0 y 1 tiene que ver con que estos valores se alcanzan para un $t$ muy grande, dificultando la detección en los extremos de las celdas. A diferencia de otras versiones donde el centro de los objetos quedaba restringido a los límites de cada celda, YOLOv5 permite que se desplace ligeramente fuera de dichos límites. Asimismo, se sigue resolviendo el problema de inestabilidad en el entrenamiento debido a la falta de restricciones espaciales que provocaba que las celdas pudieran detectar objetos en cualquier parte de la imagen\cite{redmon2016yolo9000betterfasterstronger}. 
+	
+	Los parámetros $p_w$ y $p_h$ corresponden a unos anchos y altos predeterminados que facilitan que la red no tenga que aprender las dimensiones de los objetos desde cero. Estos se seleccionan mediante el algoritmo k-means sobre las cajas del conjunto de entrenamiento para representar las formas más probables de los objetos. El número de centroides se selecciona donde se sitúe el codo en la curva IoU frente a número de \textit{clusters}\cite{redmon2016yolo9000betterfasterstronger} y se indica en el hiperparámetro \texttt{anchors}. El hiperparámetro \texttt{anchor\_t} establece el factor de escala máximo permitido entre las dimensiones de las cajas predeterminadas y las cajas reales. Si la diferencia de tamaño excede este multiplicador en un porcentaje determinado de objetos, el conjunto de datos no queda bien representado por las cajas predeterminadas, lo que activa su redimensionado automático para ajustarse mejor a la realidad del \textit{dataset}.
+	
+	El multiplicador $(2 \sigma(t))^2$ reescala las cajas predefinidas para ajustarse al objeto detectado. A diferencia de versiones anteriores en las que se usaba la exponencial (no acotada), los valores que adopta se restringen entre 0 y 4 para que no exploten las predicciones.
+	
+	Por último, cabe notar que las salidas $b$ están en valores relativos al tamaño de la imagen, por lo que deben reescalarse para obtener los valores en píxeles de $x$, $y$, $w$ y $h$.
 	
 	\subsubsection{Hiperparámetros}
 	Los hiperparámetros se organizan según se relacionen con la optimización del entrenamiento, la fase de calentamiento, la función de pérdida, el proceso de \textit{data augmentation} o la evaluación de la red.
@@ -1283,11 +1327,11 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	\paragraph{Optimización del entrenamiento}		
 	La actualización de pesos se basa en el método del gradiente:
 	
-	$$\theta_{i+1} = \theta_i - \varepsilon \nabla_{\theta} f(\theta_i)$$
+	$$\theta_{i+1} = \theta_i - \varepsilon \nabla_{\theta} \mathcal{L}(\theta_i)$$
 	
-	Donde $\theta_i$ son los pesos de la iteración $i$-ésima, $\epsilon$ es la tasa de apredizaje y $f(\theta)$ representa la función de pérdida. Esta última puede aproximarse localmente por un desarrollo de Taylor de segundo orden:
+	Donde $\theta_i$ son los pesos de la iteración $i$-ésima, $\epsilon$ es la tasa de apredizaje y $\mathcal{L}(\theta)$ representa la función de pérdida. Esta última puede aproximarse localmente por un desarrollo de Taylor de segundo orden:
 	
-	$$f(\theta_{i} - \varepsilon \nabla_{\theta} f(\theta_{i})) \approx f(\theta_{i}) + (\theta_{i+1} - \theta_{i})^{T} \nabla_{\theta} f(\theta_{i}) + \frac{1}{2}(\theta_{i+1} - \theta_{i})^{T} H(\theta_{i+1} - \theta_{i})$$
+	$$\mathcal{L}(\theta_{i} - \varepsilon \nabla_{\theta} \mathcal{L}(\theta_{i})) \approx \mathcal{L}(\theta_{i}) + (\theta_{i+1} - \theta_{i})^{T} \nabla_{\theta} \mathcal{L}(\theta_{i}) + \frac{1}{2}(\theta_{i+1} - \theta_{i})^{T} H(\theta_{i+1} - \theta_{i})$$
 	
 	El cálculo directo de la matriz Hessiana, $H$, es computacionalmente costoso debido al elevado número de parámetros en las redes. No obstante, bajo el concepto de \textit{Hessian-free optimization}, no se requiere la matriz completa, sino solamente una aproximación por diferencias finitas en la dirección del gradiente. La tasa de aprendizaje óptima para cada peso puede obtenerse a partir de la tasa real utilizada:
 	
