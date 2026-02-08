@@ -17,7 +17,11 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{caption}
-
+\usepackage{multimedia}
+\usepackage{animate}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fontawesome}
 % Configuración de TikZ y PGFPlots
 \pgfplotsset{compat=1.18}
 \usetikzlibrary{positioning, shapes.geometric, arrows.meta, calc, backgrounds, fit, shadows, patterns, babel}
@@ -1163,23 +1167,136 @@
 	\begin{frame}{Índice}
 		\tableofcontents[currentsection] 
 	\end{frame}
-	\begin{frame}{Resultados y Conclusión}
-		\begin{block}{Implementación}
-			\begin{itemize}
-				\item \textbf{Entrada:} $640 \times 640$ monocanal (conversión 8-bits).
-				\item \textbf{Dataset:} Teledyne FLIR (ADAS).
-			\end{itemize}
+	
+	\begin{frame}{Resultados de Inferencia: Predicciones vs. GT}
+	\begin{columns}[T]
+		% --- COLUMNA IZQUIERDA: VÍDEO ---
+		\column{0.5\textwidth}
+		\begin{block}{Visualización de Resultados (YouTube)}
+			\centering
+			\vspace{0.2cm}
+			% Miniatura con enlace al vídeo
+			\href{https://youtu.be/RnpR_AB2PWA}{
+				\includegraphics[width=\linewidth,height=0.4\textheight]{poster_video.jpg} % Usa una captura del vídeo
+			}
+			\vspace{0.1cm}
+			\footnotesize \textcolor{gray}{\faYoutubePlay \hspace{0.1cm} Haz clic para reproducir vídeo externo}
 		\end{block}
 		
-		\begin{alertblock}{Métricas Obtenidas}
-			\begin{itemize}
-				\item \textbf{mAP (Precisión Media):} 0.91 en peatones (oscuridad total).
-				\item \textbf{Latencia:} 22ms por cuadro (Tiempo real).
-			\end{itemize}
-		\end{alertblock}
+		\begin{itemize}
+			\item \textbf{Verde:} Etiquetas reales (GT).
+			\item \textbf{Rojo:} Detecciones del modelo.
+		\end{itemize}
 		
-		\textbf{Conclusión:} YOLO + Sensores Térmicos es una solución robusta para vigilancia nocturna, superando limitaciones de cámaras RGB mediante análisis morfológico de firmas térmicas.
+		% --- COLUMNA DERECHA: MÉTRICAS ---
+		\column{0.35\textwidth}
+		\begin{exampleblock}{Rendimiento en Test}
+			\centering
+			\vspace{0.2cm}
+			{\Large \textbf{4.3 FPS}} \\
+			\scriptsize Procesamiento por segundo
+			\vspace{0.3cm}
+			\hrule
+			\vspace{0.3cm}
+			{\Large \textbf{232.19}} \\
+			\scriptsize ms / imagen
+			\vspace{0.2cm}
+		\end{exampleblock}
+		
+		\vspace{0.3cm}
+		
+		\begin{alertblock}{Hardware Local}
+			\scriptsize
+			\centering
+			\textbf{CPU:} Intel Core i7-10510U \\
+			\textbf{RAM:} 8 GB DDR4 \\
+			\textbf{GPU:} Intel UHD Graphics \\
+			\vspace{0.1cm}
+			\textit{Inferencia en CPU}
+		\end{alertblock}
+	\end{columns}
+	
 	\end{frame}
+	
+	\begin{frame}{Rendimiento Global del Modelo}
+		\begin{itemize}
+			\item \textbf{Métricas globales:} Evolución de la precisión, recall, IOU y F1-score en función del umbral de confianza.
+			\item \textbf{Bondad del clasificador:} Se obtiene un \textbf{MAP}\(=0.475\). 
+		\end{itemize}
+		
+		\vfill
+		
+		\begin{figure}
+			\centering
+			% Ajustamos el ancho al 0.8 para que se vea grande pero deje aire
+			\includegraphics[width=0.6\linewidth, keepaspectratio]{metrics_vs_confidence}
+			\caption{\small Curvas de métricas frente a la confianza para el conjunto de test.}
+		\end{figure}
+		
+		\vfill
+		
+		\begin{center}
+			\footnotesize \textit{Nota: El punto de cruce suele indicar el balance óptimo para el despliegue del modelo.}
+		\end{center}
+	\end{frame}
+	
+	\begin{frame}{Rendimiento Global del Modelo}
+		\begin{itemize}
+			\item \textbf{Métricas globales:} Evolución de la precisión, recall, IOU y F1-score en función del umbral de confianza.
+			\item \textbf{Bondad del clasificador:} Se obtiene un \textbf{MAP}\(=0.475\). 
+		\end{itemize}
+		
+		\vfill
+		
+		\begin{figure}
+			\centering
+			% Ajustamos el ancho al 0.8 para que se vea grande pero deje aire
+			\includegraphics[width=0.6\linewidth, keepaspectratio]{metrics_vs_confidence}
+			\caption{\small Curvas de métricas frente a la confianza para el conjunto de test.}
+		\end{figure}
+		
+		\vfill
+		
+		\begin{center}
+			\footnotesize \textit{Nota: El punto de cruce suele indicar el balance óptimo para el despliegue del modelo.}
+		\end{center}
+	\end{frame}
+	\begin{frame}{Resultados Detallados por Categoría}
+		\begin{figure}
+			\centering
+			\setlength{\tabcolsep}{2pt}
+			\begin{tabular}{cc}
+				\textbf{\scriptsize Persona} & \textbf{\scriptsize Coche} \\
+				\includegraphics[height=2.8cm, width=4.5cm, keepaspectratio]{metrics_categoria_0.png} & 
+				\includegraphics[height=2.8cm, width=4.5cm, keepaspectratio]{metrics_categoria_2.png} \\
+				\\[-0.1cm]
+				\textbf{\scriptsize Camión} & \textbf{\scriptsize Otros vehículos} \\
+				\includegraphics[height=2.8cm, width=4.5cm, keepaspectratio]{metrics_categoria_6.png} & 
+				\includegraphics[height=2.8cm, width=4.5cm, keepaspectratio]{metrics_categoria_15.png}
+			\end{tabular}
+			\caption{\scriptsize Métricas del clasificador algunas categorías del conjunto de datos.}
+		\end{figure}
+	\end{frame}
+	\begin{frame}{Curva Precisión-Recall (PR)}
+		\begin{itemize}
+			\item \textbf{Interpretación:} Evalúa el balance entre la exactitud de las detecciones y la capacidad del modelo para encontrar todos los objetos.
+		\end{itemize}
+		
+		\vfill
+		
+		\begin{figure}
+			\centering
+			\includegraphics[width=0.5\linewidth, keepaspectratio]{precision-recall}
+			\caption{\small Curva PR global: El modelo ideal tendería hacia la esquina superior derecha.}
+		\end{figure}
+		
+		\vfill
+		
+		\begin{center}
+			\footnotesize \textit{Nota: Una caída abrupta en la curva indicaría una pérdida de precisión al intentar aumentar la exhaustividad.}
+		\end{center}
+	\end{frame}
+	
 	\section{Conclusión}
 		\begin{frame}{Índice}
 		\tableofcontents[currentsection] 
