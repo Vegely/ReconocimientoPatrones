@@ -60,7 +60,7 @@
 
 	\section{Introducción a la detección de objetos en imágenes térmicas}
 	Hoy en día con el avance de la automatización en muchas aplicaciones es de vital importancia la percepción del entorno mediante visión artificial como pueden ser aplicaciones de seguridad o sistemas de conducción autónoma. Aunque el estándar en muchos casos sean imágenes con cámaras convencionales (RGB), en escenarios con mala iluminación como momentos con niebla o por la noche su rendimiento decae drásticamente. Por ello, para trabajar con estos contextos se utiliza la termografía infrarroja (TIR) como alternativa robusta capaz de capturar la radiación emitida por los cuerpos independientemente de la luz ambiental \cite{jiang2022object}.
-	\newline
+	
 	
 	No obstante, el procesamiento de imágenes térmicas presenta desafíos únicos que no aparecen en imágenes convencionales:
 	\begin{itemize}
@@ -72,7 +72,7 @@
 	
 	\subsection{Estado del Arte en detección térmica}
 	Históricamente, la detección de objetos en imágenes infrarrojas se basaba en técnicas de visión computacional tradicionales que utilizaban características hechas a mano. Métodos como el Histograma de Gradientes Orientados (HOG) combinados con Máquinas de Soporte Vectorial (SVM) eran comunes \cite{Munian31122022} \cite{Qian_2021}, pero carecían de capacidad de generalización y robustez frente a la variabilidad térmica \cite{jiang2022object}.
-	\newline
+	
 	
 	La revolución del aprendizaje profundo provocó que estas técnicas quedarán desfasadas propiciando el uso de Redes Neuronales Convolucionales (CNNs). En la literatura actual, los detectores modernos se dividen en dos categorías principales: 
 	\begin{itemize} 
@@ -84,17 +84,18 @@
 	
 	\subsection{Redes Neuronales Convolucionales (CNN)} 
 	Las Redes Neuronales Convolucionales (CNN) constituyen la base matemática de los sistemas de visión modernos. A diferencia de las redes neuronales densas clásicas (MLP), las CNNs están diseñadas para procesar datos con topología de rejilla (como imágenes), empleando la operación de convolución para extraer características espaciales de manera jerárquica.
-	\newline
+	\newpage
 	
 	El principio fundamental reside en el uso de filtros o kernels que va aprendiendo la red que se deslizan sobre la imagen de entrada, generando mapas de características que representan patrones visuales de complejidad creciente: desde bordes y texturas simples en las capas iniciales, hasta formas y objetos completos en las capas profundas. Esta capacidad de extracción automática de características elimina la necesidad de diseñar descriptores manuales, permitiendo al modelo aprender las representaciones más relevantes directamente de los datos térmicos.
 	
 	\subsection{Metodología YOLO}
 	La metodología YOLO  redefine el problema de la detección de objetos como un único problema de regresión, en contraposición al enfoque de clasificación de ventanas deslizantes. La arquitectura divide la imagen de entrada en una rejilla de $S \times S$, donde cada celda es responsable de predecir objetos si el centro de estos esta dentro.
-	\newline
+	
 	
 	Para el desarrollo del proyecto hemos seleccionado la arquitectura YOLOv5 \cite{yolov5}. Aunque este modelo integra mejoras estructurales muy potentes como el backbone CSP-Darknet y el cuello PANet (detallados en la sección de topología de la red), la razón principal de esta elección ha sido su implementación nativa en Python. Al no depender del framework clásico en C, se puede agilizar la integración con otras librerías y simplificar considerablemente el flujo de trabajo.
 	\section{Fundamentos de funcionamiento de la red YOLO}
-	A continuación se desarrrolla el funcionamiento de la red YOLO mediante la teoría de Marr para lo cuál es necesario describir el nivel implementacional y algoritmico. En este caso las redes neuronales artificiales se componen de 3 componentes que se describirán a continuación:
+	Para comprender cómo funciona YOLO, analizaremos los tres pilares que integran su estructura:
+	
 	\begin{itemize}
 		\item Caracterización de la neurona.
 		\item Definición de una topología de interconexión.
@@ -221,7 +222,7 @@
 		\caption{Estructura de la neurona a la entrada de la red YOLO.}
 		\label{fig:neuronaInit}
 	\end{figure}
-	
+	\newpage
 	La operación de esta neurona convolucional está definida por los siguientes hiperparámetros:
 	\begin{itemize}
 		\item \textbf{Número de filtros (Características \(C_{out}\))}: Determinado por la primera dimensión del tensor de pesos. Define cuántos mapas de características se generarán.
@@ -278,7 +279,7 @@
 	\begin{equation}
 		(W * X)(c_{out}, h, w) = \sum_{l=0}^{\frac{C_{in}}{g}-1} \sum_{i=0}^{K_H-1} \sum_{j=0}^{K_W-1} W(c_{out}, l, i, j) \cdot X(l, h \cdot S + i \cdot d , w \cdot S + j \cdot d)
 	\end{equation}
-	\newpage
+
 	\subsection{Topología de la red}
 	En esta sección se discute la topología de la red tras analizar los artículos principales de los creadores de YOLO \cite{redmon2016lookonceunifiedrealtime}\cite{redmon2016yolo9000betterfasterstronger}\cite{redmon2018yolov3incrementalimprovement}\cite{bochkovskiy2020yolov4optimalspeedaccuracy} y su diagrama de conexión mediante la herramienta \textit{Netron} donde se introduce la red en formato \textit{.onnx} para su análisis, un ejemplo de parte de la red se puede ver en la figura \ref{fig:fotoneutron}.
 	
@@ -290,20 +291,20 @@
 	\end{figure}
 	
 	Uno de los bloques que más se repite a lo largo de la arquitectura de la red YOLO es el bloque ResNet, cuya estructura se encuentra representada en la figura \ref{fig:standard_bottleneck}. La filosofía detrás del diseño de este bloque viene detallada en el artículo  \cite{he2015deepresiduallearningimage}, y su objetivo principal se mejorar el rendimiento de las redes neuronales profundas cuando se acumulan múltiples capas.
-	\newline
+	
 	
 	La problemática surge durante el entrenamiento: al acumular múltiples capas consecutivas, los gradientes tienden a explotar. Antes de la existencia de este bloque, esto se mitigaba mediante la normalización en capas intermedias, pero aun así se observaba una degradación en la convergencia. Para entender esta degradación, se puede entender la operación de convolución como una aplicación identidad con cierto ruido superpuesto que representa las características a extraer. Por tanto, mediante una conexión lineal directa se optimiza el comportamiento del método de optimización utilizado, mejorando así la convergencia. 
-	\newline
+	
 	
 	La premisa de que los bloques se comportan como aplicaciones lineales con ruido se demuestra empíricamente en el propio artículo \cite{he2015deepresiduallearningimage}. Aunque se trata más de una heurística que de un argumento formal, en casos reales, como el de la figura \ref{fig:fotoresnet}, presenta un mejor comportamiento que simplemente acumular capas, y solo sería problemático si el objetivo del bloque fuera aproximar la función nula.
-	\newline
+	
 	
 	La interpretación del bloque ResNet como una aplicación lineal con ruido se deduce fácilmente a partir de las ecuaciones del modelo:
 	\begin{equation}
 		y=\mathcal{H}(x)=\mathcal{F}(x)+x
 	\end{equation}
 	donde \(y\) es la salida de aplicar \(\mathcal{H}\) a la entrada \(x\) que se descompone entre una función que representa la convolución \(\mathcal{F}(x)\) y la aplicación líneal directa. Por tanto, se puede asemejar el funcionamiento de las capas convolucionales como un extractor del ruido o características. 
-	\newline
+	
 	
 	Profundizando en el detalle del propio bloque, este está formado por dos capas, donde la primera se encarga de procesar los canales para que la segunda simplemente extraiga las características de los anteriores.
 	
@@ -425,7 +426,7 @@
 	\end{figure}
 	
 	El siguiente bloque básico dentro de la arquitectura YOLO es el bloque CSP o C3. La filosofía detrás del bloque representado en la figura \ref{fig:csp_bottleneck} se basa en el artículo \cite{wang2019cspnetnewbackboneenhance}. Este componente, se diseña para mejorar la ineficiencia dentro de las redes convolucionales asociada a la duplicidad de información en el gradiente.	Esta problemática, se debe a que los gradientes de retropropagación se copian y repiten a través de las diferentes capas, lo que genera cálculos redundantes que no contribuyen significativamente al aprendizaje de características nuevas. Para mitigarlo la arquitectura CSP envía el mapa de características de entrada a través de los canales base $C$ para procesarlo en dos ramas en paralelo.
-	\newline
+	
 	
 	 Como se observa en la figura \ref{fig:csp_bottleneck}, tras la concatenación de entrada, el flujo se bifurca. Una rama principal procesa la información mediante una secuencia de capas convolucionales (representadas por los pesos $W_1$, $W_2$ y $W_3$), mientras que una rama parcial conecta directamente la entrada con el final del bloque a través de una única capa (peso $W_1$ inferior). Esta división permite que el gradiente se propague por dos caminos distintos, aumentando la variabilidad del aprendizaje y reduciendo la cantidad de operaciones. Por tanto, dada una entrada \(x\),  la red procesa obtiene el tensor de salida \(y\) como la concatenación de las dos ramas en paralelo:
 	
@@ -433,13 +434,13 @@
 		y = \mathcal{T}[\mathcal{F}(x)|| \mathcal{G}(x)]
 	\end{equation}
 	donde \(\mathcal{T}\) es la convolución de la capa de salida que sirve para fusionar la información proveniente de los dos canales concatenados \(\mathcal{F}(x)|| \mathcal{G}(x)\), la transformación \(\mathcal{F}(x)\) realizada por la capa convolucional \(W_1\) sirve para fusionar la información proveniente de los dos canales de entrada y la transformación \(\mathcal{G}(x)\) consiste en extraer características mediante la capa convolucional \(W_3\) que trabaja con un mapa de características comprimido en la capa \(W_2\).
-	\newline
+	
 	
 	Por tanto, este bloque es una forma de poder reciclar el cálculo de gradientes de compresión de canales para poder tener una capa especializada únicamente en la extracción de características \(W_3\).   Para finalmente en la capa \(W_4\) combinar el contexto global de la imagen proveniente de la rama inferior con las características extraídas en la capa superior.
 	
 	\begin{figure}[H]
 		\centering
-		\resizebox{0.8\linewidth}{!}{
+		\resizebox{0.65\linewidth}{!}{
 			% --- TikZ Setup ---
 			\begin{tikzpicture}[
 				node distance=1.5cm,
@@ -554,20 +555,20 @@
 		\label{fig:csp_bottleneck}
 	\end{figure}
 	
-Una variante fundamental de la arquitectura CSP es el bloque CSPResNe(X)t o C3-k, el cual sustituye las secuencias convolucionales estándar por bloques ResNet para potenciar la extracción de características. Su representación esquemática se detalla en la figura \ref{fig:c3_final}, y su diseño se fundamenta nuevamente en el artículo \cite{wang2019cspnetnewbackboneenhance}. \newline
+Una variante fundamental de la arquitectura CSP es el bloque CSPResNe(X)t o C3-k, el cual sustituye las secuencias convolucionales estándar por bloques ResNet para potenciar la extracción de características. Su representación esquemática se detalla en la figura \ref{fig:c3_final}, y su diseño se fundamenta nuevamente en el artículo \cite{wang2019cspnetnewbackboneenhance}. 
 
 La filosofía de este diseño reside en la concatenación en serie de bloques ResNet, repetidos un número $k$ de veces según la complejidad de las características a modelar. Esto convierte al bloque C3-k en el mecanismo principal para controlar la profundidad de la red YOLO. Al concentrar la mayor densidad de procesamiento, este módulo se especializa en la extracción profunda de características.
-\newline
+
 
 En consecuencia, la integración de los módulos ResNet resulta crítica para la estabilidad del entrenamiento. Como se ha discutido previamente, las conexiones residuales mitigan el desvanecimiento del gradiente, permitiendo que el modelo converja y aprenda adecuadamente incluso al aumentar la profundidad de la red. 
-\newline
+
 
 Analizando el esquema, es relevante destacar la función específica de cada etapa: la capa de entrada $W_1$ actúa como un primer extractor de características superficiales, generando dos proyecciones del canal de entrada (reduciendo la resolución del espacio de características). Posteriormente, las capas $W_2$ se encargan de comprimir estos canales: una rama profundiza en la extracción mediante la serie de \(k\) bloques ResNet, mientras que la otra preserva la señal original. Finalmente, tras la concatenación, la capa $W_3$ fusiona ambos flujos, integrando los detalles finos aprendidos por la red profunda con la estructura general preservada por la rama inferior.
 	
 
 	\begin{figure}[H]
 		\centering
-		\resizebox{\linewidth}{!}{
+		\resizebox{0.9\linewidth}{!}{
 			% --- TikZ Setup ---
 			\begin{tikzpicture}[
 				node distance=1.5cm,
@@ -688,14 +689,14 @@ Analizando el esquema, es relevante destacar la función específica de cada eta
 	
 	
 El siguiente bloque relevante en YOLO es el representado en la figura \ref{fig:sppf_cascade} que es una variación optimizada del módulo SPP descrito en el artículo \cite{He_2014}. Esta variación optimizada  se denomina \textit{Spatial Pyramid Pooling Fast} (SPPF). Este módulo, introducido en la arquitectura YOLO \cite{yolov5}, tiene como objetivo principal permitir que la red analice simultáneamente el contexto global de la imagen y los detalles locales mediante una estructura en cascada que optimiza la velocidad de procesamiento.
-\newline
+
 
 La filosofía original del SPP \cite{He_2014} propone procesar el mapa de características mediante ventanas de pooling en paralelo con diferentes tamaños de kernel ($k=\{1, 5, 9, 13\}$) para capturar contextos de distinto tamaño. Sin embargo, la variante SPPF logra un resultado matemático equivalente mediante una estructura en cascada más eficiente. En lugar de ejecutar múltiples ramas paralelas, pasa la entrada secuencialmente a través de varias capas de Max Pooling de tamaño $5\times5$. El Max Pooling se define como el valor máximo dentro de una ventana deslizante sobre el mapa de características:
 \begin{equation}
 	y_{i,j} = \max_{(m,n) \in \mathcal{R}} x_{i+m, j+n}
 \end{equation}
 donde $\mathcal{R}$ es la región del kernel. El Max Pooling aporta invarianza a pequeñas traslaciones y deformaciones. Al quedarse solo con la característica más más representativa de una región, el modelo se vuelve robusto ante ligeros desplazamientos del objeto, permitiendo reconocer patrones independientemente de su posición exacta dentro de la ventana.
-\newline
+
 
 Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los canales de entrada a la mitad con el fin de disminuir el coste computacional de las operaciones de pooling subsiguientes. Esta etapa da paso a una estructura secuencial en cascada, donde la salida de cada bloque se bifurca iterativamente: una rama alimenta al siguiente bloque y otra se dirige directamente al concatenador. Finalmente, la capa convolucional $W_2$ integra todas estas proyecciones multiescala, generando una representación unificada y robusta frente a las transformaciones del espacio de características de entrada.
 
@@ -832,7 +833,7 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	\end{figure}
 	
 	El último bloque funcional de la red YOLO es la cabeza de detección, representada en la figura \ref{fig:yolo_head_detail}. Este módulo está constituido por tres ramas independientes que operan en paralelo, cuyas salidas se procesan para generar el vector final con todas las predicciones de la imagen.
-	\newline
+	
 	
 	La estrategia detrás de este cabezal de procesamiento es el de detección de objetos de diferente tamaño.  Para ello, la cabeza de salida procesa mapas de características en tres resoluciones espaciales distintas, denotadas como $i=\{1, 2, 3\}$, donde cada nivel se especializa en un rango de detección específico:
 	\begin{enumerate}
@@ -842,10 +843,10 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	\end{enumerate}
 	
 	Internamente, el diseño del cabezal es el factor determinante que permite clasificar a la arquitectura YOLO como una Red Totalmente Convolucional (FCN) \cite{long2015fullyconvolutionalnetworkssemantic}. Esta configuración marca una diferencia sustancial respecto a los detectores clásicos, los cuales finalizaban con capas totalmente conectadas (estructuras tipo perceptrón) que obligaban a redimensionar cualquier imagen de entrada a un tamaño fijo de salida. Por el contrario, en YOLO se sustituyen estas capas por una convolución final de tamaño $1\times1$ que elimina esta restricción dimensional.
-	\newline
+	
 	
 	Esta operación inicial es crítica, ya que actúa como la interfaz de traducción entre el espacio de características latentes y el espacio de predicción. Su función específica es proyectar la profundidad del tensor entrante para que coincida matemáticamente con las dimensiones requeridas en la salida. 
-	\newline
+	
 	
 	A la salida de esta proyección convolucional, el tensor resultante se reestructura para generar, por cada celda de la rejilla espacial, un total de $B=3$ predicciones correspondientes a las cajas de anclaje. Cada predicción genera un vector de características que se somete a la función de activación Sigmoide para normalizar los valores en el rango $[0, 1]$. Este vector de salida se descompone en tres segmentos funcionales:
 	\begin{enumerate}
@@ -982,25 +983,25 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 		\label{fig:yolo_head_detail}
 	\end{figure}
 	
-	\newpage
+
 	
 	Por último, se detalla la arquitectura global representada en la Figura \ref{fig:yolo_vertical_start}. Este diseño constituye una evolución directa de las metodologías propuestas en la familia de detectores YOLO a través de los artículos descritos anteriormente. Aunque este esquema específico corresponde a la implementación de YOLOv5, su diseño modular se fundamenta en ir integrando los avances definidos en la literatura científica previamente, comenzando con la versión original del detector de una sola etapa \cite{redmon2016lookonceunifiedrealtime} hasta las optimizaciones de flujo de gradiente de la versión 4 \cite{bochkovskiy2020yolov4optimalspeedaccuracy}.
-	\newline
+	
 	
 	La red se estructura secuencialmente en tres etapas funcionales descritas en detalle en la literatura: Backbone (esqueleto), Neck (cuello) y Head (cabeza), cuyo análisis detallado se presenta a continuación basándose en el diagrama de la figura \ref{fig:yolo_vertical_start}.
-	\newline
+	
 	
 	\subsubsection{Backbone: Extracción de Características}
 	El proceso comienza con una entrada estándar de $3 \times 640 \times 640$. No obstante, debido a que la red es FCN, es posible procesar imágenes de dimensiones variables ya que no existen capas densas que fijen el tamaño de entrada. Es relevante destacar también que aunque la arquitectura base está diseñada para imágenes RGB (3 canales), para la aplicación en imágenes térmicas se modifica la primera capa convolucional. Al ajustar la capa de entrada de tres canales a uno, se adapta la red a la naturaleza monocanal de estas imágenes para así reducir la redundancia en las operaciones.
-	\newline	
+		
 	
 	La primera etapa de procesamiento es realizada por la capa convolucional $W_1$, que reduce la resolución espacial inicial para disminuir el coste computacional. A diferencia de las topologías secuenciales clásicas como Darknet-19 o Darknet-53 \cite{redmon2016yolo9000betterfasterstronger}  \cite{redmon2018yolov3incrementalimprovement}, que se basan en el apilamiento lineal de capas convolucionales y max-pooling siguiendo el paradigma convencional visto en clase, el esqueleto propuesto integra bloques C3-k.
-	\newline
+	
 	
 	Esta estructura, introducida en el artículo de YOLOv4 \cite{bochkovskiy2020yolov4optimalspeedaccuracy}, divide el flujo de características en dos ramas para evitar el cálculo redundante de gradientes, así como estabilizarlos mediante las ramas residuales. Como se observa en el diagrama, los bloques C3-1, C3-2 y C3-3 actúan como extractores profundos, permitiendo que la red aprenda características complejas sin saturar el flujo de retropropagación. El backbone finaliza con el módulo SPPF diseñado para separar las características de contexto más importantes antes de ingresar al cuello de la red.
 	
 	\subsubsection{Neck: Fusión de Escalas} La sección intermedia o Neck es la responsable de la detección multiescala. Tal y como se introdujo en YOLOv3 \cite{redmon2018yolov3incrementalimprovement}, es fundamental realizar predicciones en diferentes escalas para detectar eficazmente tanto objetos pequeños como grandes. Sin embargo, la arquitectura de la Figura \ref{fig:yolo_vertical_start} mejora la propuesta original de la versión 3 implementando una estructura PANet (Path Aggregation Network) mediante los bloques CSP, característica clave adoptada desde YOLOv4 \cite{bochkovskiy2020yolov4optimalspeedaccuracy}.
-	\newline
+	
 	
 	El diagrama muestra explícitamente este flujo bidireccional:
 	\begin{enumerate}
@@ -1010,12 +1011,13 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	Esta estrategia de agregación de rutas garantiza que las tres salidas del cuello contengan una mezcla óptima de información contextual y espacial.
 	
 	\subsubsection{Head: Detección} Finalmente, las tres ramas resultantes alimentan a la Cabeza de Detección. Siguiendo el paradigma establecido en YOLOv2 \cite{redmon2016yolo9000betterfasterstronger}, la red no predice las cajas delimitadoras directamente desde cero, sino que ajusta desplazamientos sobre cajas de anclaje predefinidas.
-	\newline
+	
 	
 	Como se observa en la parte inferior de la Figura \ref{fig:yolo_vertical_start}, el sistema genera tres salidas independientes, una estrategia consolidada en YOLOv3 \cite{redmon2018yolov3incrementalimprovement} para manejar la variación de tamaño de los objetos:
 	\begin{itemize}
 		\item La rama de la izquierda (alta resolución) se especializa en objetos pequeños.
 		\item La rama central (resolución media) detecta objetos medianos.
+		\newpage
 		\item La rama de la derecha (baja resolución) se encarga de los objetos grandes.
 	\end{itemize}
 	
@@ -1237,6 +1239,10 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 				\node [font=\sffamily\small, color=gray, align=center] at ($(head.south) + (0, -1.0)$) {Salida\\$1\times25200\times85$};
 				\node [above=-0.2cm of input, font=\sffamily\small, color=gray, align=center] {Entrada\\$3\times640\times640$};
 				
+				\node [font=\sffamily\small,align=center] at ($(head.south) + (-6.5, 2.0)$) {1};
+				\node [font=\sffamily\small,align=center] at ($(head.south) + (0, 2.0)$) {2};
+				\node [font=\sffamily\small,align=center] at ($(head.south) + (6.5, 2.0)$) {3};
+				
 				\node [draw, dashed, fill=white, rounded corners, 
 				font=\sffamily\scriptsize, align=left, anchor=north west, 
 				at={($(c3_2.south) + (3, 6.0)$)}] {
@@ -1257,6 +1263,7 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 		\caption{Arquitectura Global YOLO: Inicio Vertical y Flujo Descendente}
 		\label{fig:yolo_vertical_start}
 	\end{figure}
+	\newpage
 	\subsection{Reglas de entrenamiento}
 	El entrenamiento se realiza mediante el cálculo de la Intersección sobre la Unión (IoU) entre la predicción y el \textit{ground truth} térmico. Se utilizan funciones de pérdida como CIoU que consideran la distancia entre centros, la escala y el aspecto de la caja de detección.
 	
@@ -1265,7 +1272,7 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	
 	\begin{equation}
 	\begin{aligned}
-	f(x, y, w, h, C, p |\theta) &= \lambda_{\text{coord}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} \left[ (x_i - \hat{x}_i)^2 + (y_i - \hat{y}_i)^2 \right] \\
+	\mathcal{L} &= \lambda_{\text{coord}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} \left[ (x_i - \hat{x}_i)^2 + (y_i - \hat{y}_i)^2 \right] \\
 	& + \lambda_{\text{coord}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} \left[ \left( \sqrt{w_i} - \sqrt{\hat{w}_i} \right)^2 + \left( \sqrt{h_i} - \sqrt{\hat{h}_i} \right)^2 \right] \\
 	& + \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} (C_i - \hat{C}_i)^2 \\
 	& + \lambda_{\text{noobj}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{noobj}} (C_i - \hat{C}_i)^2 \\
@@ -1273,25 +1280,71 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	\end{aligned}
 	\end{equation}
 	
-	Donde $\mathds{1}_{i,j}^{\text{obj}}$ indica si un objeto aparece en la $j$-ésima caja de la $i$-ésima celda, $x_i$ e $y_i$ son las coordenadas del centro del objeto, $w_i$ y $h_i$ el ancho y el alto del objeto. La red tiene una confianza $\hat{C}_i = P(\text{Objeto}) \text{IoU}$ de que la caja que ha estimado contiene un objeto, que depende de la probabilidad que asigna a la existencia de dicho objeto. El valor real de la confianza será 0 si no hay objeto o la intersección sobre la unión si lo hay (si fuese 1 se estarían penalizando doblemente los errores de detección). Por último, $\hat{p}_i(c)$ corresponde a un término de clasificación, que representa la probabilidad que la red asigna a que el objeto pertenezca a una determinada clase.
+	Donde $\mathds{1}_{i,j}^{\text{obj}}$ indica si un objeto aparece en la $j$-ésima caja de la $i$-ésima celda, $x_i$ e $y_i$ son las coordenadas del centro del objeto, $w_i$ y $h_i$ el ancho y el alto del objeto. La red tiene una confianza $\hat{C}_i = P(\text{Objeto}) \cdot\text{IoU}$ de que la caja que ha estimado contiene un objeto, que depende de la probabilidad que asigna a la existencia de dicho objeto. El valor real de la confianza será 0 si no hay objeto o la intersección sobre la unión si lo hay (si fuese 1 se estarían penalizando doblemente los errores de detección). Por último, $\hat{p}_i(c)$ corresponde a un término de clasificación, que representa la probabilidad que la red asigna a que el objeto pertenezca a una determinada clase.
 		
-	Los errores de detección en objetos grandes son menos graves que en los pequeños, por lo que se toma la raíz cuadrada en los términos de detección del ancho y alto para tener en cuenta este efecto. Además, se observan 2 hiperparámetros: $\lambda_{\text{coord}}$ y $\lambda_{\text{noobj}}$. Ambos tienen el propósito de incentivar a la red a detectar objetos aunque
+	Los errores de detección en objetos grandes son menos graves que en los pequeños, por lo que se toma la raíz cuadrada en los términos de detección del ancho y alto para tener en cuenta este efecto. Además, se observan 2 hiperparámetros: $\lambda_{\text{coord}}$ y $\lambda_{\text{noobj}}$. Ambos tienen el propósito de incentivar a la red a predecir cajas aunque se equivoque. Dado que la mayoría de las celdas no contienen objetos, el término correspondiente en la función de pérdida es dominante y YOLO tiende a decir que no hay ningún objeto. Con $\lambda_{\text{coord}}$ se aumenta la penalización al cometer errores de localización y con $\lambda_{\text{noobj}}$ se reduce la importancia de predecir cajas cuando no las hay.
+	
+	La formulación anterior corresponde a YOLOv1. Aunque en este trabajo se esté usando YOLOv5, se considera que dicha ecuación proporciona una buena intuición sobre el funcionamiento de la red. En versiones posteriores se han introducido algunas modificaciones y refinamientos sobre esta idea. La función de pérdida en YOLOv5 considera la entropía cruzada binaria para las pérdidas de clasificación y existencia de objetos, y la intersección sobre la unión completa (CIoU) para las de localización:
+
+	\begin{equation}
+	\begin{aligned}
+	\mathcal{L}
+	&=
+	\lambda_{\text{loc}}\,\mathcal{L}_{\text{loc}}
+	+
+	\lambda_{\text{obj}}\,\mathcal{L}_{\text{obj}}
+	+
+	\lambda_{\text{cls}}\,\mathcal{L}_{\text{cls}} \\
+	&=
+	\lambda_{\text{loc}}\,(1 - \mathrm{CIoU})
+	+
+	\lambda_{\text{obj}}\,\mathrm{BCE}_{\text{obj}}
+	+
+	\lambda_{\text{cls}}\,\mathrm{BCE}_{\text{cls}}
+	\end{aligned}
+	\end{equation}
+
+	Donde $\lambda_{\text{loc}}$, $\lambda_{\text{obj}}$ y $\lambda_{\text{cls}}$ se corresponden con los hiperparámetros \texttt{box}, \texttt{obj} y \texttt{cls}, respectivamente.
+	
+	En vez de estimar directamente las coordenadas del centro del objeto, el ancho y el alto, lo hace de forma relativa a la posición de cada celda\cite{yolov5}:
+	
+	\begin{align}
+	b_x &= [2\sigma(t_x) - 0.5] + c_x \\
+	b_y &= [2\sigma(t_y) - 0.5] + c_y \\
+	b_w &= p_w [2 \sigma(t_w)]^2\\
+	b_h &= p_h [2 \sigma(t_h)]^2
+	\end{align}
+	
+	Donde $c_x$ y $c_y$ son las coordenadas de la esquina superior izquierda de las celdas. Las salidas de las posiciones de los centros de los objetos se pasan por una sigmoide, de forma que las variaciones $2\sigma(t) - 0.5$ toman valores entre -0.5 y 1.5 (siendo 0 la esquina superior izquierda y 1 la esquina superior derecha). La razón de no restringirlas entre 0 y 1 tiene que ver con que estos valores se alcanzan para un $t$ muy grande, dificultando la detección en los extremos de las celdas. A diferencia de otras versiones donde el centro de los objetos quedaba restringido a los límites de cada celda, YOLOv5 permite que se desplace ligeramente fuera de dichos límites. Asimismo, se sigue resolviendo el problema de inestabilidad en el entrenamiento debido a la falta de restricciones espaciales que provocaba que las celdas pudieran detectar objetos en cualquier parte de la imagen\cite{redmon2016yolo9000betterfasterstronger}. 
+	
+	Los parámetros $p_w$ y $p_h$ corresponden a unos anchos y altos predeterminados que facilitan que la red no tenga que aprender las dimensiones de los objetos desde cero. Estos se seleccionan mediante el algoritmo k-means sobre las cajas del conjunto de entrenamiento para representar las formas más probables de los objetos. El número de centroides se selecciona donde se sitúe el codo en la curva IoU frente a número de \textit{clusters}\cite{redmon2016yolo9000betterfasterstronger} y se indica en el hiperparámetro \texttt{anchors}. El hiperparámetro \texttt{anchor\_t} establece el factor de escala máximo permitido entre las dimensiones de las cajas predeterminadas y las cajas reales. Si la diferencia de tamaño excede este multiplicador en un porcentaje determinado de objetos, el conjunto de datos no queda bien representado por las cajas predeterminadas, lo que activa su redimensionado automático para ajustarse mejor a la realidad del \textit{dataset}.
+	
+	El multiplicador $[2 \sigma(t)]^2$ reescala las cajas predefinidas para ajustarse al objeto detectado. A diferencia de versiones anteriores en las que se usaba la exponencial (no acotada), los valores que adopta se restringen entre 0 y 4 para que no exploten las predicciones.
+	
+	Por último, cabe notar que las salidas $b$ están en valores relativos al tamaño de la imagen, por lo que deben reescalarse para obtener los valores en píxeles de $x$, $y$, $w$ y $h$.
 	
 	\subsubsection{Hiperparámetros}
 	Los hiperparámetros se organizan según se relacionen con la optimización del entrenamiento, la fase de calentamiento, la función de pérdida, el proceso de \textit{data augmentation} o la evaluación de la red.
 	
-	\paragraph{Optimización del entrenamiento}		
+	\paragraph*{Optimización del entrenamiento}$$ $$		
 	La actualización de pesos se basa en el método del gradiente:
 	
-	$$\theta_{i+1} = \theta_i - \varepsilon \nabla_{\theta} f(\theta_i)$$
+	\begin{equation}
+		\theta_{i+1} = \theta_i - \varepsilon \nabla_{\theta} \mathcal{L}(\theta_i)
+	\end{equation}
 	
-	Donde $\theta_i$ son los pesos de la iteración $i$-ésima, $\epsilon$ es la tasa de apredizaje y $f(\theta)$ representa la función de pérdida. Esta última puede aproximarse localmente por un desarrollo de Taylor de segundo orden:
+	Donde $\theta_i$ son los pesos de la iteración $i$-ésima, $\varepsilon$ es la tasa de apredizaje y $\mathcal{L}(\theta)$ representa la función de pérdida. Esta última puede aproximarse localmente por un desarrollo de Taylor de segundo orden:
 	
-	$$f(\theta_{i} - \varepsilon \nabla_{\theta} f(\theta_{i})) \approx f(\theta_{i}) + (\theta_{i+1} - \theta_{i})^{T} \nabla_{\theta} f(\theta_{i}) + \frac{1}{2}(\theta_{i+1} - \theta_{i})^{T} H(\theta_{i+1} - \theta_{i})$$
+	\begin{equation}
+		\mathcal{L}(\theta_{i} - \varepsilon \nabla_{\theta} \mathcal{L}(\theta_{i})) \approx \mathcal{L}(\theta_{i}) + (\theta_{i+1} - \theta_{i})^{T} \nabla_{\theta} \mathcal{L}(\theta_{i}) + \frac{1}{2}(\theta_{i+1} - \theta_{i})^{T} H(\theta_{i+1} - \theta_{i})
+	\end{equation}
 	
 	El cálculo directo de la matriz Hessiana, $H$, es computacionalmente costoso debido al elevado número de parámetros en las redes. No obstante, bajo el concepto de \textit{Hessian-free optimization}, no se requiere la matriz completa, sino solamente una aproximación por diferencias finitas en la dirección del gradiente. La tasa de aprendizaje óptima para cada peso puede obtenerse a partir de la tasa real utilizada:
+	\newpage
 	
-	$$\varepsilon^* = \varepsilon \frac{\theta_{i+1} - \theta_i}{2\theta_{i+1} - \theta_i - \theta_{i+2}}$$
+	\begin{equation}
+		\varepsilon^* = \varepsilon \frac{\theta_{i+1} - \theta_i}{2\theta_{i+1} - \theta_i - \theta_{i+2}}
+	\end{equation}
 	
 	Se puede obtener una estimación de la tasa de aprendizaje óptima global (es decir, para la red como conjunto en lugar de para cada peso individual) calculando el cociente entre las sumas de los valores absolutos de los numeradores y denominadores de la expresión anterior para todos los pesos.
 	
@@ -1312,7 +1365,7 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 			\includegraphics[width=\textwidth]{clr_vs_fixed.png}
 			\caption{Tasa de aprendizaje óptima según el número de iteraciones al usar una tasa de aprendizaje fija (azul) y CLR (rojo). En el primer caso, la tasa óptima comienza en valores elevados, pero rápidamente decrece y se estabiliza en valores bajos. Esto se puede interpretar como que el optimizador ha quedado atrapado en zonas de alta curvatura donde pasos grandes del gradiente provocarían inestabilidad. En el segundo caso, la tasa óptima se mantiene elevada durante la mayor parte del proceso. Inicialmente, las tasas de aprendizaje altas permiten sortear mínimos locales ruidosos (hessiano elevado) y converger hacia valles planos y anchos (hessiano bajo) en los que puede avanzar a grandes pasos sin estancarse.}
 		\end{subfigure}
-		\caption{}
+		\caption{Gráficas de superconvergencia extraídas de \cite{smith2017super}.}
 		\label{fig:super_convergencia}
 	\end{figure}
 	
@@ -1322,23 +1375,25 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 		\item Calentamiento (\textit{warmup}): es la fase inicial del CLR, en la que la tasa de aprendizaje empieza en niveles bajos y sube gradualmente hasta alcanzar la tasa inicial. Evita el sobreajuste temprano hacia los primeros lotes de datos procesados, al restringir el tamaño de los pasos del gradiente. El hiperparámetro \texttt{warmup\_epochs} indica el número de épocas de calentamiento.
 		
 		Durante esta fase, la actualización de la tasa de aprendizaje sigue la dinámica:
-		
+		\newpage
 		\begin{align}
 			& \varepsilon = \varepsilon_0 + \frac{n_i}{n_w} (\varepsilon_1 lr_0 - \varepsilon_0) \\
-			& \varepsilon_1 = (1 - \frac{ep}{Ep})(1 - lr_f) + lr_f \\
+			& \varepsilon_1 = \left(1 - \frac{ep}{Ep}\right)(1 - lr_f) + lr_f \\
 			& n_i = i + ep \cdot n_b \\
 			& n_w = \max(\text{\texttt{warmup\_epochs}} \cdot n_b, 100)
 		\end{align}
 		
 		Donde $\varepsilon_0$ es la tasa inicial de aprendizaje (se puede modificar en los sesgos con el hiperparámetro \texttt{warmup\_bias\_lr}), $Ep$ el total de épocas, $ep$ el número de la época actual (empezando en 0), $n_w$ el número de iteraciones de calentamiento, $n_i$ el número de iteración actual, $n_b$ el número de lotes en una época. 
 		
-		Además, aparecen los hiperparámetros de control $lr_0$ y $lr_f$. El primero proporciona una referencia de la tasa inicial (de la fase de entrenamiento) objetivo a la que se quiere llegar al final del calentamiento. Cabe notar que esta tasa no es el objetivo como tal, sino que viene modulada por el número de la época. El número de iteraciones de calentamiento es en general menor que el número de iteraciones en una época. En tal caso, $\varepsilon_1 = 1$ y la tasa de aprendizaje al final del calentamiento es $lr_0$. En caso contrario (si se fija un valor diferente de 1 en \texttt{warmup\_epochs}), la tasa de aprendizaje acaba el calentamiento en un valor entre $lr_0$ y $lr_0 lr_f$. El segundo se refiere a un factor de escala de la tasa de aprendizaje, de forma que esta acaba en $lr_0 lr_f$ al final de la fase de entrenamiento.
+		Además, aparecen los hiperparámetros de control $lr_0$ y $lr_f$. El primero proporciona una referencia de la tasa inicial (de la fase de entrenamiento) objetivo a la que se quiere llegar al final del calentamiento. Cabe notar que esta tasa no es el objetivo como tal, sino que viene modulada por el número de la época. El número de iteraciones de calentamiento es en general menor que el número de iteraciones en una época. En tal caso, $\varepsilon_1 = 1$ y la tasa de aprendizaje al final del calentamiento es $lr_0$. En caso contrario (si se fija un valor diferente de 1 en \texttt{warmup\_epochs}), la tasa de aprendizaje acaba el calentamiento en un valor entre $lr_0$ y $lr_0\cdot lr_f$. El segundo se refiere a un factor de escala de la tasa de aprendizaje, de forma que esta acaba en $lr_0 \cdot lr_f$ al final de la fase de entrenamiento.
 		
-		De las ecuaciones anteriores se deduce que el crecimiento de la tasa de aprendizaje durante el calentamiento sigue una curva que se ralentiza según avanza las épocas. Se trata de una interpolación lineal entre $\varepsilon_0$ y $\varepsilon_1 lr_0$, donde el término $\varepsilon_1$ va disminuyendo con las épocas, por lo que cada vez los incrementos ($n_i$ sigue creciendo) en la tasa de aprendizaje son menores.
+		De las ecuaciones anteriores se deduce que el crecimiento de la tasa de aprendizaje durante el calentamiento sigue una curva que se ralentiza según avanza las épocas. Se trata de una interpolación lineal entre $\varepsilon_0$ y $\varepsilon_1\cdot lr_0$, donde el término $\varepsilon_1$ va disminuyendo con las épocas, por lo que cada vez los incrementos ($n_i$ sigue creciendo) en la tasa de aprendizaje son menores.
 		
 		\item Entrenamiento: corresponde con la segunda fase del CLR, en la que la tasa de aprendizaje decae desde el valor alcanzado en el calentamiento hasta el valor $lr_0 lr_f$ según la dinámica:
 		
-		$$\varepsilon = \varepsilon_0 ((1 - \frac{ep}{Ep})(1 - lr_f) + lr_f)$$		
+		\begin{equation}
+			\varepsilon = \varepsilon_0 \left[\left(1 - \frac{ep}{Ep}\right)(1 - lr_f) + lr_f\right]
+		\end{equation}	
 	\end{itemize}
 	
 	\begin{itemize}
@@ -1388,12 +1443,114 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	\end{enumerate}
 	
 	\section{Resultados}
-	Los resultados muestran que el modelo YOLO es capaz de distinguir entre un ser vivo y un objeto inanimado con una temperatura similar gracias al análisis morfológico.
-	\begin{itemize}
-		\item \textbf{Precisión Media (mAP):} 0.91 en la detección de peatones en oscuridad total.
-		\item \textbf{Velocidad:} Tiempo de inferencia de 22ms por cuadro.
-		\item \textbf{Conclusión:} La combinación de YOLO y sensores térmicos ofrece una solución robusta para vigilancia donde la luz visible es insuficiente.
-	\end{itemize}
+Los resultados muestran que el modelo YOLO es capaz de distinguir entre un ser vivo y un objeto inanimado con una temperatura similar gracias al análisis morfológico.
+
+
+En el caso general:
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\linewidth]{metrics_vs_confidence}
+	\caption{Métricas globales del clasificador.}
+	\label{fig:metricsvsconfidence}
+\end{figure}
+
+
+
+\begin{figure}[H]
+	\centering
+	
+	% Row 1
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{metrics_categoria_0.png}
+		\caption{Métricas para la clase persona.}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{metrics_categoria_1.png}
+		\caption{Métricas para la clase bicicleta.}
+	\end{subfigure}
+	
+	\medskip
+	
+	% Row 2
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{metrics_categoria_2.png}
+		\caption{Métricas para la clase coche.}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{metrics_categoria_3.png}
+		\caption{Métricas para la clase moto.}
+	\end{subfigure}
+	
+	\medskip
+	
+	% Row 3
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{metrics_categoria_6.png}
+		\caption{Métricas para la clase camión.}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{metrics_categoria_7.png}
+		\caption{Métricas para la clase semáforo.}
+	\end{subfigure}
+	
+	\caption{Métricas de rendimiento del clasificador para las categorías: persona, bicicleta, coche, moto, camión y semáforo.}
+	\label{fig:metrics_part1}
+\end{figure}
+
+\clearpage % Forces a page break between the two figures
+
+% --- FIGURE 2: Last 4 Images (2 Rows x 2 Cols) ---
+\begin{figure}[H]
+	\centering
+	
+	% Row 1
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{metrics_categoria_8.png}
+		\caption{Métricas para la clase boca de incendios.}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{metrics_categoria_9.png}
+		\caption{Métricas para la clase señal.}
+	\end{subfigure}
+	
+	\medskip 
+	
+	% Row 2
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{metrics_categoria_10.png}
+		\caption{Métricas para la clase perro.}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{metrics_categoria_15.png}
+		\caption{Métricas para la clase otros vehículos.}
+	\end{subfigure}
+	
+	\caption{Métricas de rendimiento del clasificador para las categorías: boca de incendios, señal, perro y otros vehículos.}
+	\label{fig:metrics_part2}
+\end{figure}
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\linewidth]{precision-recall}
+	\caption{Curva precisión recall.}
+	\label{fig:precision-recall}
+\end{figure}
 	
 	\bibliographystyle{ieeetr}
 	\bibliography{bibliografia} 
