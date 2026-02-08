@@ -46,4 +46,9 @@ K.~He, X.~Zhang, S.~Ren, and J.~Sun, {\em Spatial Pyramid Pooling in Deep
 J.~Long, E.~Shelhamer, and T.~Darrell, ``Fully convolutional networks for
   semantic segmentation,'' 2015.
 
+\bibitem{smith2017super}
+L.~N. Smith and N.~Topin, ``Super-convergence: Very fast training of neural
+  networks using large learning rates. arxiv,'' {\em arXiv preprint
+  arXiv:1708.07120}, vol.~6, 2017.
+
 \end{thebibliography}

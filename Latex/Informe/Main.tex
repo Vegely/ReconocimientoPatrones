@@ -1228,8 +1228,136 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 		\label{fig:yolo_vertical_start}
 	\end{figure}
 	\subsection{Reglas de entrenamiento}
-	\section{Desarrollo}
+	El entrenamiento se realiza mediante el cálculo de la Intersección sobre la Unión (IoU) entre la predicción y el \textit{ground truth} térmico. Se utilizan funciones de pérdida como CIoU que consideran la distancia entre centros, la escala y el aspecto de la caja de detección.
+	
+	\subsubsection{Hiperparámetros}
+	Los hiperparámetros se organizan según se relacionen con la optimización del entrenamiento, la fase de calentamiento, la función de pérdida, el proceso de \textit{data augmentation} o la evaluación de la red.
+	
+	\paragraph{Optimización del entrenamiento}		
+	La actualización de pesos se basa en el método del gradiente:
+	
+	$$\theta_{i+1} = \theta_i - \varepsilon \nabla_{\theta} f(\theta_i)$$
+	
+	Donde $\theta_i$ son los pesos de la iteración $i$-ésima, $\epsilon$ es la tasa de apredizaje y $f(\theta)$ representa la función de pérdida. Esta última puede aproximarse localmente por un desarrollo de Taylor de segundo orden:
+	
+	$$f(\theta_{i} - \varepsilon \nabla_{\theta} f(\theta_{i})) \approx f(\theta_{i}) + (\theta_{i+1} - \theta_{i})^{T} \nabla_{\theta} f(\theta_{i}) + \frac{1}{2}(\theta_{i+1} - \theta_{i})^{T} H(\theta_{i+1} - \theta_{i})$$
+	
+	El cálculo directo de la matriz Hessiana, $H$, es computacionalmente costoso debido al elevado número de parámetros en las redes. No obstante, bajo el concepto de \textit{Hessian-free optimization}, no se requiere la matriz completa, sino solamente una aproximación por diferencias finitas en la dirección del gradiente. La tasa de aprendizaje óptima para cada peso puede obtenerse a partir de la tasa real utilizada:
+	
+	$$\varepsilon^* = \varepsilon \frac{\theta_{i+1} - \theta_i}{2\theta_{i+1} - \theta_i - \theta_{i+2}}$$
+	
+	Se puede obtener una estimación de la tasa de aprendizaje óptima global (es decir, para la red como conjunto en lugar de para cada peso individual) calculando el cociente entre las sumas de los valores absolutos de los numeradores y denominadores de la expresión anterior para todos los pesos.
+	
+	La tasa de aprendizaje es un hiperparámetro fundamental en el entrenamiento de las redes. Algunas estrategias la establecen a un valor constante durante todo el entrenamiento o se reduce progresivamente a medida que avanza el entrenamiento. Otras proponen variarla entre un valor mínimo y uno máximo para explorar de forma más eficiente la función de pérdida. Esta se conoce como tasa de aprendizaje cíclica (CLR, por sus siglas en inglés). El proceso consta de dos etapas que se repite alternamente: una primera en la que se incrementa la tasa de aprendizaje, y una segunda en la que se disminuye. El número de iteraciones de cada etapa viene dado por el tamaño de paso. 
+	
+	En \cite{smith2017super} proponen una modificación sobre CLR, en la que solamente se realiza un ciclo de subida-bajada de una duración menor que el total de épocas y reduciendo la tasa de aprendizaje hasta varios órdenes de magnitud la tasa inicial en las épocas restantes. Este comportamiento busca lograr la super-convergencia, la cual hace referencia al uso de tasas de aprendizaje inusualmente elevadas que permiten acelerar el entrenamiento hasta varios órdenes de magnitud respecto de los métodos estándar. La figura \ref{fig:super_convergencia} ilustra este fenómeno.
+	
+	\begin{figure}
+		\centering
+		\begin{subfigure}[b]{0.45\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{super_convergencia.png}
+			\caption{Exactitud de una Resnet-56 en función de la tasa de aprendizaje con 100000 (amarillo) iteraciones, 20000 iteraciones (rojo) y 5000 iteraciones (azul). Se observa que la exactitud es significativamente inferior con pocas iteraciones para tasas de aprendizaje pequeñas. Sin embargo, para tasas de aprendizaje grandes, todas las curvas convergen a un valor de exactitud similar independientemente del número de iteraciones.}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[b]{0.45\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{clr_vs_fixed.png}
+			\caption{Tasa de aprendizaje óptima según el número de iteraciones al usar una tasa de aprendizaje fija (azul) y CLR (rojo). En el primer caso, la tasa óptima comienza en valores elevados, pero rápidamente decrece y se estabiliza en valores bajos. Esto se puede interpretar como que el optimizador ha quedado atrapado en zonas de alta curvatura donde pasos grandes del gradiente provocarían inestabilidad. En el segundo caso, la tasa óptima se mantiene elevada durante la mayor parte del proceso. Inicialmente, las tasas de aprendizaje altas permiten sortear mínimos locales ruidosos (hessiano elevado) y converger hacia valles planos y anchos (hessiano bajo) en los que puede avanzar a grandes pasos sin estancarse.}
+		\end{subfigure}
+		\caption{}
+		\label{fig:super_convergencia}
+	\end{figure}
+	
+	A nivel de implementación, el CLR se estructura en dos etapas:
+	
+	\begin{itemize}
+		\item Calentamiento (\textit{warmup}): es la fase inicial del entrenamiento, en la que la tasa de aprendizaje empieza en niveles bajos y sube gradualmente hasta alcanzar la tasa inicial. Evita el sobreajuste temprano hacia los primeros lotes de datos procesados, al restringir el tamaño de los pasos del gradiente. El hiperparámetro \texttt{warmup\_epochs} indica el número de épocas de calentamiento.
+		
+		Durante esta fase, la actualización de la tasa de aprendizaje sigue la dinámica:
+		
+		\begin{align}
+			& \varepsilon = \varepsilon_0 + \frac{n_i}{n_w} (\varepsilon_1 lr_0 - \varepsilon_0) \\
+			& \varepsilon_1 = (1 - \frac{ep}{Ep})(1 - lr_f) + lr_f \\
+			& n_i = i + ep \cdot n_b \\
+			& n_w = \max(\text{\texttt{warmup\_epochs}} \cdot n_b, 100)
+		\end{align}
+		
+		Donde $\varepsilon_0$ es la tasa inicial de aprendizaje (se puede modificar en los sesgos con el hiperparámetro \texttt{warmup\_bias\_lr}), $Ep$ el total de épocas, $ep$ el número de la época actual (empezando en 0), $n_w$ el número de iteraciones de calentamiento, $n_i$ el número de iteración actual, $n_b$ el número de lotes en una época. 
+		
+		Además, aparecen los hiperparámetros de control $lr_0$ y $lr_f$. El primero proporciona una referencia de la tasa inicial (de la fase de entrenamiento) objetivo a la que se quiere llegar al final del calentamiento. Cabe notar que esta tasa no es el objetivo como tal, sino que viene modulada por el número de la época. El número de iteraciones de calentamiento es en general menor que el número de iteraciones en una época. En tal caso, $\varepsilon_1 = 1$ y la tasa de aprendizaje al final del calentamiento es $lr_0$. En caso contrario (si se fija un valor diferente de 1 en \texttt{warmup\_epochs}), la tasa de aprendizaje acaba el calentamiento en un valor entre $lr_0$ y $lr_0 lr_f$. El segundo se refiere a un factor de escala de la tasa de aprendizaje, de forma que esta acaba en $lr_0 lr_f$ al final de la fase de entrenamiento.
+		
+		De las ecuaciones anteriores se deduce que el crecimiento de la tasa de aprendizaje durante el calentamiento sigue una curva. 
+		
+		tamaño del lote  * warmup 
+		los pesos de los sesgos son diferentes a los de los pesos. Los sesgos van de \texttt{warmupbiaslr} hasta 
+		$$\eta = Y_0 + \frac{n_i}{n_w} (Y_1 - Y0)$$
+		
+		Donde $Y_1 = (1 - \frac{e}{E})(1 - \eta_f) + \eta_f$
+		
+		La fase de calentamiento termina según $n_w = n_{warmup} nb$, siendo $n_w$ el número de épocas y $n_warmup$ un hiperparámetro que define el número de épocas de entrenamiento. 
+		
+		\item Entrenamiento:
+		$$\eta = (1 - \frac{e}{E})(1 - \eta_f) + \eta_f$$
+		
+		
+	\end{itemize}
+	
+	\begin{itemize}
+		\item Tasa de aprendizaje inicial (\texttt{lr0}):
+		\item Factor de la tasa de aprendizaje final (\texttt{lrf}):
+		\item Fuerza de la inercia en la actualización de gradientes (\texttt{momentum}):
+		\item Penalización para la regularización de los pesos (\texttt{weight\_decay}):
+	\end{itemize}
+	
+	\paragraph{Fase de calentamiento (\textit{Warmup})}
+	Configuraciones temporales para estabilizar el modelo en las iteraciones iniciales.
+	\begin{itemize}
+		\item \texttt{warmup\_epochs}: Duración de la fase de estabilidad inicial.
+		\item \texttt{warmup\_momentum}: Momentum reducido para el arranque.
+		\item \texttt{warmup\_bias\_lr}: Tasa de aprendizaje específica para los sesgos iniciales.
+	\end{itemize}
+	
+	\paragraph{Función de pérdida}
+	Determinan la importancia relativa de cada error cometido por el modelo.
+	\begin{itemize}
+		\item \texttt{box}: Peso del error en la localización de las cajas.
+		\item \texttt{obj}: Importancia del error en la detección de presencia de objetos.
+		\item \texttt{cls}: Peso del error en la clasificación de las categorías.
+	\end{itemize}
+	
+	\paragraph{\textit{Data augmentation}}
+	Parámetros que rigen las transformaciones aleatorias para mejorar la robustez.
+	\begin{itemize}
+		\item \textit{Color}: Ajustes de tono (\texttt{hsv\_h}), saturación (\texttt{hsv\_s}) y brillo (\texttt{hsv\_v}).
+		\item \textit{Geometría}: Rotación (\texttt{degrees}), traslación (\texttt{translate}) y escalado (\texttt{scale}).
+		\item \textit{Mezcla}: Probabilidades de técnicas como \texttt{mosaic} o \texttt{mixup}.
+	\end{itemize}
+	
+	\paragraph{Evaluación de la red}
+	Parámetros que rigen las transformaciones aleatorias para mejorar la robustez.
+	\begin{itemize}
+		\item \textit{Color}: Ajustes de tono (\texttt{hsv\_h}), saturación (\texttt{hsv\_s}) y brillo (\texttt{hsv\_v}).
+		\item \textit{Geometría}: Rotación (\texttt{degrees}), traslación (\texttt{translate}) y escalado (\texttt{scale}).
+		\item \textit{Mezcla}: Probabilidades de técnicas como \texttt{mosaic} o \texttt{mixup}.
+	\end{itemize}
+	
+	
+	\section{Desarrollo: Aplicación en Imágenes Térmicas}
+	Para usar YOLO con imágenes térmicas, el proceso técnico seguido es:
+	\begin{enumerate}
+		\item \textbf{Conversión de Datos:} Transformación de las lecturas de temperatura radiométrica a una escala de grises de 8 bits para compatibilidad con la arquitectura estándar.
+		\item \textbf{Aumento de Datos Especializado:} Inserción de ruido gaussiano para simular condiciones atmosféricas adversas que afectan la señal infrarroja.
+		\item \textbf{Entrenamiento:} Ajuste del modelo sobre un dataset de $640 \times 640$ píxeles, optimizando los pesos para detectar firmas térmicas en entornos nocturnos.
+	\end{enumerate}
+	
 	\section{Resultados}
+	Los resultados muestran que el modelo YOLO es capaz de distinguir entre un ser vivo y un objeto inanimado con una temperatura similar gracias al análisis morfológico.
+	\begin{itemize}
+		\item \textbf{Precisión Media (mAP):} 0.91 en la detección de peatones en oscuridad total.
+		\item \textbf{Velocidad:} Tiempo de inferencia de 22ms por cuadro.
+		\item \textbf{Conclusión:} La combinación de YOLO y sensores térmicos ofrece una solución robusta para vigilancia donde la luz visible es insuficiente.
+	\end{itemize}
 	
 	\bibliographystyle{ieeetr}
 	\bibliography{bibliografia} 
