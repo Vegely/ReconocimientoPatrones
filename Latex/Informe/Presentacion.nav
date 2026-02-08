@@ -70,15 +70,17 @@
 \headcommand {\beamer@framepages {26}{26}}
 \headcommand {\slideentry {4}{0}{6}{27/27}{}{0}}
 \headcommand {\beamer@framepages {27}{27}}
-\headcommand {\beamer@sectionpages {22}{27}}
-\headcommand {\beamer@subsectionpages {22}{27}}
-\headcommand {\sectionentry {5}{Conclusión}{28}{Conclusión}{0}}
-\headcommand {\slideentry {5}{0}{1}{28/28}{}{0}}
+\headcommand {\slideentry {4}{0}{7}{28/28}{}{0}}
 \headcommand {\beamer@framepages {28}{28}}
-\headcommand {\slideentry {5}{0}{2}{29/29}{}{0}}
+\headcommand {\beamer@sectionpages {22}{28}}
+\headcommand {\beamer@subsectionpages {22}{28}}
+\headcommand {\sectionentry {5}{Conclusión}{29}{Conclusión}{0}}
+\headcommand {\slideentry {5}{0}{1}{29/29}{}{0}}
 \headcommand {\beamer@framepages {29}{29}}
-\headcommand {\beamer@partpages {1}{29}}
-\headcommand {\beamer@subsectionpages {28}{29}}
-\headcommand {\beamer@sectionpages {28}{29}}
-\headcommand {\beamer@documentpages {29}}
-\headcommand {\gdef \inserttotalframenumber {29}}
+\headcommand {\slideentry {5}{0}{2}{30/30}{}{0}}
+\headcommand {\beamer@framepages {30}{30}}
+\headcommand {\beamer@partpages {1}{30}}
+\headcommand {\beamer@subsectionpages {29}{30}}
+\headcommand {\beamer@sectionpages {29}{30}}
+\headcommand {\beamer@documentpages {30}}
+\headcommand {\gdef \inserttotalframenumber {30}}

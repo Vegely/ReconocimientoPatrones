@@ -1167,6 +1167,57 @@
 	\begin{frame}{Índice}
 		\tableofcontents[currentsection] 
 	\end{frame}
+	\begin{frame}{Análisis de Datos: Distribución de Clases}
+		\begin{columns}
+			% --- Columna Izquierda: Texto y Análisis ---
+			\column{0.45\textwidth}
+			\begin{alertblock}{Limitación Crítica}
+				Se observa un \textbf{severo desequilibrio} de clases en el conjunto de datos.
+			\end{alertblock}
+			
+			\vspace{0.1cm}
+			\textbf{Impacto en el modelo:}
+			\begin{itemize}
+				\item El aprendizaje quedará condicionado por las clases mayoritarias.
+				\item Se favorece la predicción de \textit{Coche} y \textit{Persona}.
+				\item Rendimiento deficiente esperado en clases con representación casi nula.
+			\end{itemize}
+			
+			% --- Columna Derecha: Tabla ---
+			\column{0.55\textwidth}
+			\centering
+			% Redimensionamos la tabla para que encaje verticalmente
+			\resizebox{0.75\linewidth}{!}{
+				\begin{tabular}{lrrr}
+					\toprule
+					\textbf{Clase} & \textbf{Train} & \textbf{Val} & \textbf{Test} \\
+					\midrule
+					Persona & 50,478 & 4,470 & 12,323 \\
+					Coche & 73,623 & 7,133 & 30,517 \\
+					Señal & 20,770 & 2,472 & 5,660 \\
+					Semáforo & 16,198 & 2,005 & 6,758 \\
+					Bicicleta & 7,237 & 170 & 113 \\
+					Moto & 1,116 & 55 & 3,314 \\
+					Camión & 829 & 46 & 2,634 \\
+					Autobús & 2,245 & 179 & 0 \\
+					Otro vehículo & 1,373 & 63 & 696 \\
+					Boca de incendios & 1,095 & 94 & 277 \\
+					Perro & 4 & 0 & 25 \\
+					Tren & 5 & 0 & 0 \\
+					Ciervo & 8 & 0 & 0 \\
+					Monopatín & 29 & 3 & 0 \\
+					Cochecito & 15 & 6 & 0 \\
+					Scooter & 15 & 0 & 0 \\
+					\midrule
+					\textbf{Total} & \textbf{175,040} & \textbf{16,696} & \textbf{62,317} \\
+					\bottomrule
+				\end{tabular}
+			}
+			\vspace{0.2cm}
+			\captionof{table}{Distribución de muestras por conjunto.}
+			\label{tab:dataset-dist}
+		\end{columns}
+	\end{frame}
 	
 	\begin{frame}{Resultados de Inferencia: Predicciones vs. GT}
 	\begin{columns}[T]
@@ -1184,8 +1235,8 @@
 		\end{block}
 		
 		\begin{itemize}
-			\item \textbf{Verde:} Etiquetas reales (GT).
-			\item \textbf{Rojo:} Detecciones del modelo.
+			\item \textbf{Verde:} Detecciones del modelo.
+			\item \textbf{Rojo:} Etiquetas reales.
 		\end{itemize}
 		
 		% --- COLUMNA DERECHA: MÉTRICAS ---
