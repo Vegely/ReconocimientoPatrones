@@ -36,7 +36,16 @@
 
 % Librerías de TikZ necesarias
 \usetikzlibrary{positioning, shapes.geometric, arrows.meta, calc, backgrounds, fit, shadows, patterns, babel}
-
+% Colores configurados: cian (cv), rojo (mp), naranja (concat), verde (sum), amarillo (resnet)
+\tikzset{
+	baseblock/.style={rectangle, draw=black, thick, minimum width=2.5cm, minimum height=1cm, align=center, rounded corners=2pt},
+	cvblock/.style={baseblock, fill=cyan!10},       % Bloques de Convolución
+	mpblock/.style={baseblock, fill=red!15},        % Max Pooling / Downsampling
+	concatblock/.style={baseblock, fill=orange!20}, % Concatenación
+	sumnode/.style={circle, draw=black, fill=green!10, inner sep=2pt}, % Nodos de suma
+	resnetblock/.style={baseblock, fill=yellow!20},  % Bloques Residuales
+	arrow/.style={-Stealth, thick}
+}
 
 \raggedbottom
 \setlength{\parskip}{1em}   
@@ -48,7 +57,7 @@
 	top=20mm,
 }
 
-\title{Trabajo: Técnicas de Reconocimiento de Patrones}
+\title{Técnicas de Reconocimiento de Patrones: Uso de la arquitectura YOLOv5 para detección y clasificación de imágenes térmicas.}
 \author{Jorge Bengoa Pinedo \and Bogurad Barañski Barañska \and Sergio Izquierdo Morona }
 \date{\today}
 
@@ -1397,7 +1406,7 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 		\end{equation}	
 	\end{itemize}
 	
-	\paragraph{Momento}
+	\paragraph{Momento} $$ $$
 	A la actualización de los pesos por descenso del gradiente se puede añadir un término de momento:
 	
 	\begin{equation}
@@ -1419,7 +1428,7 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	
 	Es decir, el momento crece linealmente durante el calentamiento y se establece en el valor indicado en \texttt{momentum} durante la fase de entrenamiento.
 	
-	\paragraph{Penalización L$_2$}
+	\paragraph{Penalización L$_2$} $$ $$
 	Se implementa a través del hiperparámetro \texttt{weight\_decay}, que controla el nivel de regularización. Por lo tanto, la expresión de la función de pérdida regularizada quedaría como:
 	
 	\begin{equation}
@@ -1435,7 +1444,7 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	Nótese que el producto $\varepsilon \cdot \texttt{weight\_decay}$ es siempre menor que 1, por lo que fuerza los pesos a valores pequeños.
 	
 	
-	\paragraph{\textit{Data augmentation}}
+	\paragraph{\textit{Data augmentation}} $$ $$
 	YOLOv5 emplea\textit{data augmentation} para enriquecer el conjunto de datos de entrenamiento y mejorar la capacidad de generalización del modelo. Esta técnica consiste en aplicar transformaciones aleatorias a las imágenes, de forma que el modelo no solo ve más ejemplos, sino que también aprende a reconocer objetos en contextos variados y frente a distorsiones. Algunas de las ventajas son que ayuda a reducir el sobreajuste y aumenta su robustez frente a diversas situaciones. Los hiperparámetros que controlan las transformaciones se describen brevemente a continuación:
 	
 	\begin{itemize}
@@ -1450,14 +1459,188 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 		\item \texttt{mixup}: superpone dos imágenes con cierta transparencia. 
 		\item \texttt{copy\_paste}: toma objetos de una imagen y los pega en otra. Aumentar la presencia de clases poco comunes en escenarios nuevos.
 	\end{itemize}
+	\newpage
+	\section{Metodología de entrenamiento y clasificación}
+	En esta sección se describe de forma detallada la metodología empleada para la preparación de los datos, el entrenamiento del modelo YOLOv5 y la evaluación de su rendimiento sobre el conjunto de test. La metodología se ha estructurado en tres fases principales: preprocesamiento y generación de etiquetas, configuración del entrenamiento y entorno hardware, y evaluación cuantitativa y visual del modelo entrenado.
 	
-	\section{Desarrollo: Aplicación en Imágenes Térmicas}
-	Para usar YOLO con imágenes térmicas, el proceso técnico seguido es:
+	\subsection{Preprocesamiento y generación de etiquetas \texttt{labels\_generator.py}}
+	
+	El conjunto de datos original se proporcionó en formato \textit{COCO}, almacenado en ficheros JSON que contienen información estructurada sobre imágenes, categorías y anotaciones. Dado que la arquitectura YOLOv5 requiere las etiquetas en formato YOLO, fue necesario realizar un proceso de conversión y normalización de las anotaciones antes del entrenamiento y la evaluación del modelo.
+	
+	A partir de los ficheros JSON correspondientes a los subconjuntos de entrenamiento, validación y test, se extrajeron las tablas de categorías, imágenes y anotaciones. Las anotaciones incluían las coordenadas de las cajas delimitadoras en formato COCO, definidas como:
+	
+	\[
+	[x_{\min}, y_{\min}, w_{\text{caja}}, h_{\text{caja}}]
+	\]
+	
+	donde $(x_{\min}, y_{\min})$ representa la esquina superior izquierda de la caja y $w_{\text{caja}}, h_{\text{caja}}$ su anchura y altura en píxeles. Para cada anotación, se asoció la información dimensional de la imagen correspondiente, permitiendo transformar estas coordenadas absolutas en el formato requerido por YOLO.
+	
+	El centro de cada caja se calculó como:
+	
+	\begin{align}
+		x_{\text{centro}} &= x_{\min} + \frac{w_{\text{caja}}}{2} \\
+		y_{\text{centro}} &= y_{\min} + \frac{h_{\text{caja}}}{2}
+	\end{align}
+	
+	Posteriormente, estas coordenadas se normalizaron dividiéndolas por el ancho y alto de la imagen, respectivamente, obteniendo así el formato YOLO normalizado:
+	
+	\begin{equation}
+		[x_{\text{centro}}^{\text{norm}}, y_{\text{centro}}^{\text{norm}}, w_{\text{caja}}^{\text{norm}}, h_{\text{caja}}^{\text{norm}}]
+	\end{equation}
+	
+	donde todos los valores se encuentran en el intervalo $[0,1]$.
+	
+	Dado que los identificadores de categoría del formato COCO no son necesariamente consecutivos ni compatibles con los índices de clase utilizados por YOLOv5, se definió un mapeo explícito entre las categorías originales y los identificadores de clase empleados durante el entrenamiento. Este mapeo garantiza la coherencia entre las etiquetas generadas y las salidas del modelo.
+	
+	Finalmente, para cada imagen se generó un archivo de texto independiente que contiene todas las anotaciones asociadas, siguiendo el formato estándar de YOLO:
+	
+	\begin{equation}
+		[\text{clase},x_{\text{centro}}^{\text{norm}}, y_{\text{centro}}^{\text{norm}}, w_{\text{caja}}^{\text{norm}}, h_{\text{caja}}^{\text{norm}}]
+	\end{equation}
+	
+	
+	
+	Este procedimiento se aplicó de manera consistente a todos los subconjuntos del dataset, generando las etiquetas necesarias tanto para el entrenamiento del modelo como para su evaluación posterior.
+	\newpage
+	\subsection{Configuración del entrenamiento y hardware \texttt{train.py}}
+	Para el entrenamiento se ha utilizado directamente el archivo proporcionado en la implementación de YOLOv5 con la modificación de algunos parámetros para adecuar la red a imágenes térmicas mencionados a continuación.
+	
+	Dada la naturaleza de las imágenes térmicas utilizadas en este estudio, fue necesaria una adaptación arquitectónica en la capa de entrada de la red. A diferencia de las imágenes RGB convencionales de tres canales, las imágenes térmicas son monocromáticas; por consiguiente, se modificó la configuración del modelo para admitir un único canal de entrada. En coherencia con esta decisión, se desactivaron los hiperparámetros de aumento de datos relacionados con perturbaciones de color (matiz, saturación y brillo), forzando al modelo a extraer características basadas exclusivamente en la distribución térmica y la forma de los objetos, evitando transformaciones incoherentes con la modalidad infrarroja.
+	
+	El entrenamiento se ejecutó en una infraestructura de computación de alto rendimiento (HPC), utilizando un nodo de cálculo con las siguientes especificaciones:
+	
+	\begin{itemize}
+		\item Memoria RAM: 192 GiB.
+		\item Almacenamiento: 128 GiB SSD (M.2) para carga eficiente del dataset.
+		\item GPU: $1 \times$ NVIDIA A100 (arquitectura Ampere), seleccionada de un clúster de 4 GPUs disponibles en el nodo.
+	\end{itemize}
+	
+	Para el proceso de optimización se emplearon pesos preentrenados del modelo \texttt{yolov5s.pt}, aplicando \textit{transfer learning}. Se configuró un tamaño de imagen de $640 \times 640$ píxeles y un tamaño de lote de 64 muestras. El entrenamiento se llevó a cabo durante un total de 500 épocas, completándose en un tiempo aproximado de 3 horas y 20 minutos.
+	
+	El experimento puede reproducirse mediante el siguiente comando de ejecución:
+	
+	\begin{verbatim}
+		python train.py --img 640 --batch 64 --epochs 500 \
+		--data ../data/dataset.yaml --weights yolov5s.pt --device 0
+	\end{verbatim}
+	
+	\subsection{Conversión y procesamiento de datos \texttt{metrics\_calculation.py}}
+	
+	Las predicciones generadas por el modelo YOLOv5 se expresan en coordenadas absolutas de imagen, definidas por las esquinas superior izquierda e inferior derecha de cada caja delimitadora detectada. Por el contrario, las etiquetas del conjunto de test se encuentran en formato YOLO, representadas como:
+	
+	\begin{equation}
+		[\text{clase}, x_{\text{centro}}, y_{\text{centro}}, w_{\text{caja}}, h_{\text{caja}}]
+	\end{equation}
+	
+	donde las coordenadas están normalizadas en el intervalo $[0,1]$ respecto al ancho y alto de la imagen. Con el fin de permitir una comparación directa entre predicciones y etiquetas, fue necesario transformar estas últimas a coordenadas absolutas de imagen.
+	
+	Dicha conversión se realizó calculando las coordenadas de las esquinas de cada caja a partir de su centro y dimensiones normalizadas, de acuerdo con las siguientes expresiones:
+	\newpage
+	\begin{align}
+		x_1 &= \left(x_{\text{centro}} - \frac{w_{\text{caja}}}{2}\right) \cdot w_{\text{img}} \\
+		y_1 &= \left(y_{\text{centro}} - \frac{h_{\text{caja}}}{2}\right) \cdot h_{\text{img}} \\
+		x_2 &= \left(x_{\text{centro}} + \frac{w_{\text{caja}}}{2}\right) \cdot w_{\text{img}} \\
+		y_2 &= \left(y_{\text{centro}} + \frac{h_{\text{caja}}}{2}\right) \cdot h_{\text{img}}
+	\end{align}
+	
+	Esta transformación establece un marco de referencia común que permite el cálculo consistente de métricas de localización entre predicciones y etiquetas reales.
+	
+	\subsection{Cálculo de la intersección sobre la unión (IoU) \texttt{metrics\_calculation.py}}
+	
+	La calidad de localización de las detecciones se evaluó mediante la métrica \textit{Intersection over Union} (IoU), ampliamente utilizada en tareas de detección de objetos. Esta métrica se define como la relación entre el área de intersección y el área de unión de una caja predicha y su correspondiente etiqueta:
+	
+	\begin{equation}
+		\text{IoU} = \frac{\text{Área de intersección}}{\text{Área de unión}}
+	\end{equation}
+	
+	Sea $\text{box}{\text{pred}} = [x_1^{p}, y_1^{p}, x_2^{p}, y_2^{p}]$ la caja predicha y $\text{box}{\text{gt}} = [x_1^{g}, y_1^{g}, x_2^{g}, y_2^{g}]$ la caja correspondiente a la etiqueta real, el área de intersección se calcula como:
+	
+	\begin{align}
+		x_1^{\text{int}} &= \max(x_1^{p}, x_1^{g}) \\
+		y_1^{\text{int}} &= \max(y_1^{p}, y_1^{g}) \\
+		x_2^{\text{int}} &= \min(x_2^{p}, x_2^{g}) \\
+		y_2^{\text{int}} &= \min(y_2^{p}, y_2^{g}) \\
+		A_{\text{int}} &= \max(0, x_2^{\text{int}} - x_1^{\text{int}}) \cdot \max(0, y_2^{\text{int}} - y_1^{\text{int}})
+	\end{align}
+	
+	La IoU se obtiene finalmente como:
+	
+	\begin{equation}
+		\text{IoU} = \frac{A_{\text{int}}}{A_{\text{pred}} + A_{\text{gt}} - A_{\text{int}}+\varepsilon}
+	\end{equation}
+	
+	donde $A_{\text{pred}}$ y $A_{\text{gt}}$ representan las áreas de la caja predicha y de la etiqueta, respectivamente, y $\varepsilon$ es un valor pequeño introducido para evitar divisiones por cero. Se definió un umbral $\text{IoU}_{\text{th}}$ para determinar coincidencias válidas entre predicciones y etiquetas.
+	
+	\subsection{Creación de matriz de confusión multiclase \texttt{metrics\_graphics.py}}
+	
+	A partir del valor de IoU y de la coincidencia de clase, se definieron las siguientes categorías para la evaluación del modelo:
+	
+	\begin{itemize}
+		\item Verdaderos Positivos (TP): predicciones cuya clase coincide con la etiqueta correspondiente y cuya IoU es mayor o igual que el umbral $\text{IoU}_{\text{th}}$.
+		\item Falsos Positivos (FP): predicciones que no cumplen simultáneamente los criterios de clase correcta e IoU suficiente.
+		\newpage
+		\item Falsos Negativos (FN): etiquetas reales que no han sido emparejadas con ninguna predicción válida.
+	\end{itemize}
+	
+	El procedimiento seguido para la asignación de estas categorías fue el siguiente:
+	
 	\begin{enumerate}
-		\item \textbf{Conversión de Datos:} Transformación de las lecturas de temperatura radiométrica a una escala de grises de 8 bits para compatibilidad con la arquitectura estándar.
-		\item \textbf{Aumento de Datos Especializado:} Inserción de ruido gaussiano para simular condiciones atmosféricas adversas que afectan la señal infrarroja.
-		\item \textbf{Entrenamiento:} Ajuste del modelo sobre un dataset de $640 \times 640$ píxeles, optimizando los pesos para detectar firmas térmicas en entornos nocturnos.
+		\item Se filtraron las predicciones cuya confianza era inferior a un umbral de clasificación $\text{conf}_{\text{th}}$.
+		\item Para cada clase, se compararon las predicciones restantes con las etiquetas de la misma clase que no hubieran sido emparejadas previamente.
+		\item Cada predicción se asoció con la etiqueta que maximiza la IoU.
+		\item Si el valor de IoU superaba el umbral establecido, la predicción se contabilizó como TP; en caso contrario, se consideró FP.
+		\item Todas las etiquetas que permanecieron sin emparejar se contabilizaron como FN.
 	\end{enumerate}
+	
+	Este criterio garantiza una asignación uno a uno entre predicciones y etiquetas, evitando múltiples emparejamientos sobre un mismo objeto real.
+	
+	\subsection{Métricas de desempeño \texttt{metrics\_graphics.py}}
+	
+	A partir de los valores de TP, FP y FN se calcularon las métricas estándar de evaluación en detección de objetos:
+	
+	\begin{align}
+		\text{Precisión} &= \frac{TP}{TP + FP} \\
+		\text{Recall} &= \frac{TP}{TP + FN} \\
+		F_1 &= 2 \cdot \frac{\text{Precisión} \cdot \text{Recall}}{\text{Precisión} + \text{Recall}} \\
+		\text{IoU media (TP)} &= \frac{1}{TP} \sum \text{IoU}_{\text{TP}}
+	\end{align}
+	
+	Estas métricas se calcularon para distintos valores del umbral de confianza, lo que permitió analizar la evolución del desempeño del modelo y generar las correspondientes curvas Precision-Recall.
+	
+	\subsection{Average Precision y mean Average Precision \texttt{metrics\_graphics.py}}
+	
+	El Average Precision (AP) se definió como el área bajo la curva Precision-Recall para cada clase individual. Siguiendo el estándar PASCAL VOC, el cálculo del AP se realizó mediante una aproximación numérica por sumatoria de rectángulos:
+	
+	\begin{equation}
+		AP = \sum_k (R_{k+1} - R_k) \cdot P_{k+1}
+	\end{equation}
+	
+	donde $R_k$ y $P_k$ representan los valores de recall y precisión ordenados de forma creciente respecto al recall. A partir de los valores de AP obtenidos para cada clase, se calculó el mean Average Precision (mAP) como una media ponderada de los AP por el número de instancias reales de cada clase correspondiente en el conjunto de test. De este modo, las clases con mayor representación contribuyen proporcionalmente más al valor final del mAP, mientras que las clases minoritarias tienen una influencia acorde a su frecuencia.
+	
+	Este enfoque resulta especialmente adecuado en escenarios con distribuciones de clase desbalanceadas, ya que evita que clases con muy pocas instancias introduzcan variaciones significativas en la métrica global. El mAP ponderado se define formalmente como:
+	
+	\begin{equation}
+		mAP = \sum_{c=1}^{N} w_c \cdot AP_c,
+		\qquad
+		w_c = \frac{n_c}{\sum_{k=1}^{N} n_k}
+	\end{equation}
+	
+	donde $AP_c$ representa el Average Precision de la clase $c$, $n_c$ el número de instancias reales de dicha clase y $N$ el número total de clases consideradas.
+	
+	
+	\subsection{Evaluación de la eficiencia computacional \texttt{metrics\_calculation.py}}
+	
+	Durante el proceso de inferencia se registró el tiempo de procesamiento de cada imagen, permitiendo estimar el rendimiento medio del modelo en términos de frames por segundo (FPS), definido como:
+	
+	\begin{equation}
+		FPS = \frac{\text{Número total de imágenes}}{\text{Tiempo total de procesamiento}}
+	\end{equation}
+	
+	Esta métrica proporciona una estimación directa de la viabilidad del modelo para aplicaciones en tiempo real o cuasi tiempo real.
+	
+	\subsection{Visualización de resultados \texttt{video\_process.py}}
+	
+	Como complemento a la evaluación cuantitativa, se generaron visualizaciones superponiendo las cajas predichas y las etiquetas reales sobre cada imagen del conjunto de test. Las detecciones del modelo se representaron mediante rectángulos verdes, mientras que las etiquetas reales se mostraron mediante rectángulos rojos con trazo discontinuo. A partir de estas visualizaciones se generaron secuencias de vídeo a 25 FPS, lo que permite una evaluación cualitativa del comportamiento del modelo frame a frame.
 	
 \section{Resultados}
 
@@ -1622,6 +1805,7 @@ El análisis de las curvas revela una estratificación del rendimiento en tres g
 
 En conclusión, la gráfica evidencia que el modelo está altamente especializado en las clases mayoritarias, mientras que su capacidad de generalización para las clases minoritarias es insuficiente, siendo este el principal factor que penaliza el mAP global del sistema.
 
+\newpage
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.7\linewidth]{precision-recall}
@@ -1635,9 +1819,149 @@ Finalmente, se llevó a cabo una inspección visual del modelo, disponible en el
 Pese a estas limitaciones, el sistema demuestra ser un clasificador competente para la identificación general de obstáculos en carretera en el contexto de la conducción autónoma, siempre que se disponga de los recursos de hardware adecuados.
 
 En cuanto al costo computacional, las pruebas de inferencia realizadas en un equipo con CPU Intel Core i7-10510U, RAM 8 GB DDR4 y GPU Intel UHD Graphics, arrojaron una velocidad media de 4.3 FPS, lo que equivale a una latencia de 232 ms por imagen.
-	
+
+\section{Conclusiones}
+
+El desarrollo de este trabajo ha permitido validar la eficacia de la arquitectura YOLOv5 aplicada a la detección y clasificación de objetos en imágenes térmicas, un dominio crítico para los sistemas de conducción autónoma en condiciones de visibilidad reducida. Tras el análisis de la metodología y los resultados, se extraen las siguientes conclusiones principales:
+
+\subsection{Logros y fortalezas del modelo}
+En primer lugar, se ha demostrado que la adaptación de una red neuronal convolucional diseñada originalmente para el espectro visible (RGB) al espectro infrarrojo es viable y efectiva. La modificación de la capa de entrada para procesar un único canal y la supresión de aumentos de datos cromáticos han permitido que el modelo centre su aprendizaje en la morfología y la huella térmica de los objetos.
+
+Cuantitativamente, el modelo ha alcanzado un MAP de 0.475. Este resultado es comparable al estado del arte (YOLOv4) y valida la idoneidad de la arquitectura propuesta. Es especialmente destacable el desempeño en las clases críticas para la seguridad vial, como \textbf{Coche} y \textbf{Persona}, donde se ha logrado una alta precisión ($AP > 0.6$). Esto indica que el sistema es robusto y fiable para la identificación de los actores más comunes en la vía, cumpliendo con el objetivo principal de percepción del entorno.
+
+Asimismo, desde el punto de vista computacional, la arquitectura de una sola etapa ha confirmado su eficiencia. A pesar de las limitaciones del hardware utilizado para la inferencia (CPU sin aceleración dedicada), se ha obtenido una tasa de procesamiento de 4.3 FPS. Esto sugiere que, implementado en hardware embarcado específico (como GPUs o FPGAs de automoción), el sistema es perfectamente escalable para operar en tiempo real.
+
+\subsection{Limitaciones y líneas futuras}
+No obstante, el estudio también ha revelado limitaciones significativas que condicionan la aplicabilidad inmediata del sistema en un entorno de conducción totalmente autónomo:
+
+\begin{itemize}
+	\item \textbf{Desbalanceo del conjunto de datos:} La principal barrera encontrada ha sido la distribución desigual de las clases en el dataset de entrenamiento. La hegemonía de muestras de coches y personas ha penalizado drásticamente la capacidad de generalización del modelo en categorías minoritarias (bicicletas, hidrantes, perros), haciendo que su detección sea prácticamente nula.
+	\item \textbf{Falsos positivos y confusión visual:} Se ha observado una tendencia del modelo a generar falsos positivos en la clase \textit{Señal}, probablemente debido a la dificultad de distinguir formas geométricas simples sin información de color y textura en las imágenes térmicas.
+	\item \textbf{Seguridad crítica:} El análisis cualitativo mediante vídeo evidenció un fallo crítico de seguridad (no detección de un niño cruzando). Esto subraya que, aunque el modelo es una herramienta de asistencia potente, no posee todavía la fiabilidad absoluta requerida para la autonomía completa sin el apoyo de fusión de sensores.
+\end{itemize}
+
+En definitiva, se concluye que YOLOv5 es una arquitectura sólida para la termografía infrarroja, capaz de proporcionar una percepción robusta en oscuridad total. Para trabajos futuros, se propone mitigar las limitaciones actuales mediante técnicas de remuestreo para equilibrar las clases, la fusión de etiquetas semánticamente similares (agrupación de vehículos grandes) y la exploración de arquitecturas híbridas que integren información temporal para evitar la pérdida de detección en fotogramas consecutivos.
+\newpage
 \bibliographystyle{ieeetr}
 \bibliography{bibliografia} 
-	
-	
+
+\newpage
+\appendix % Cambia la numeración a letras (A, B, C...)
+
+% Título del Anexo basado en el nombre del trabajo
+\section{Técnicas de Reconocimiento de Patrones de imágenes térmicas con IA}
+\label{anexo:patrones}
+
+Este anexo desarrolla los fundamentos y la metodología para la detección de objetos en el espectro térmico, basado en la arquitectura YOLO mediante IA.
+
+% --------------------------------------------------------------------------
+% Punto 1 del índice original
+\subsection{Introducción a la detección de objetos en imágenes térmicas}
+La detección de objetos en el espectro infrarrojo (térmico) presenta desafíos únicos como la falta de texturas visuales (color), menor contraste y la presencia de halos térmicos ("ghosting"). Este estudio aborda la adaptación de arquitecturas de aprendizaje profundo para mitigar estos problemas.
+
+\subsubsection{Estado del Arte en detección térmica}
+Mientras que la visión clásica dependía de descriptores manuales como HOG o SIFT, el estado del arte actual se centra en redes neuronales profundas que aprenden características jerárquicas directamente de los termogramas, ofreciendo mayor robustez frente al ruido térmico.
+
+\subsubsection{Redes Neuronales Convolucionales (CNN)}
+Las CNN extraen características espaciales mediante filtros aprendibles. En termografía, donde la forma y la intensidad de radiación son claves, las CNN logran aislar patrones de calor correspondientes a seres vivos o vehículos con alta precisión.
+
+\subsubsection{Metodología YOLO}
+YOLO (\textit{You Only Look Once}) plantea la detección como un problema de regresión único. A diferencia de los detectores de dos etapas, YOLO predice cuadros delimitadores y probabilidades de clase en una sola evaluación de la red, siendo ideal para aplicaciones en tiempo real.
+
+% --------------------------------------------------------------------------
+% Punto 2 del índice original
+\subsection{Fundamentos de funcionamiento de la red YOLO}
+
+\subsubsection{Neurona de la red YOLO}
+La unidad básica de procesamiento utiliza funciones de activación no lineales modernas como \textit{SiLU} o \textit{Mish}, que permiten un flujo de gradientes más eficiente durante el entrenamiento de arquitecturas profundas (Darknet).
+
+\subsubsection{Topología de la red}
+La arquitectura se descompone en tres bloques funcionales. A continuación se ilustra el esquema utilizando la codificación de colores del proyecto:
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[node distance=1.8cm]
+		% Diagrama simplificado respetando tus colores
+		\node (input) [draw=black, dashed, minimum width=2cm] {Input};
+		\node (backbone) [cvblock, right of=input, xshift=1.5cm] {Backbone\\(Extracción)};
+		\node (neck) [concatblock, right of=backbone, xshift=1.5cm] {Neck\\(Fusión)};
+		\node (head) [mpblock, right of=neck, xshift=1.5cm] {Head\\(Detección)};
+		
+		\draw [arrow] (input) -- (backbone);
+		\draw [arrow] (backbone) -- (neck);
+		\draw [arrow] (neck) -- (head);
+	\end{tikzpicture}
+	\caption{Flujo general de la arquitectura YOLO.}
+\end{figure}
+
+\paragraph{Backbone: Extracción de Características.}
+Es la columna vertebral (ej. CSPDarknet) encargada de generar mapas de características.
+% Ejemplo de bloque residual
+\begin{center}
+	\begin{tikzpicture}[scale=0.7, transform shape]
+		\node (in) {x};
+		\node (conv1) [cvblock, right=0.5cm of in] {Conv $1\times1$};
+		\node (conv2) [cvblock, right=0.5cm of conv1] {Conv $3\times3$};
+		\node (add) [sumnode, right=0.5cm of conv2] {+};
+		\node (out) [right=0.5cm of add] {y};
+		
+		\draw [arrow] (in) -- (conv1);
+		\draw [arrow] (conv1) -- (conv2);
+		\draw [arrow] (conv2) -- (add);
+		\draw [arrow] (add) -- (out);
+		% Conexión residual
+		\draw [arrow] (in) to[out=90,in=90] (add);
+	\end{tikzpicture}
+\end{center}
+
+\paragraph{Neck: Fusión de Escalas.}
+Utiliza estructuras como PANet para combinar características semánticas profundas con características espaciales superficiales, crucial para detectar objetos pequeños en imágenes térmicas.
+
+\paragraph{Head: Detección.}
+Capa final que genera los tensores de predicción (coordenadas, objetualidad y clase).
+
+\subsubsection{Reglas de entrenamiento}
+Se define una función de pérdida compuesta.
+
+\paragraph{Entrenamiento de la red.}
+Se utiliza descenso de gradiente estocástico con momentum. La pérdida penaliza errores en la localización (IoU) y en la clasificación.
+
+\paragraph{Hiperparámetros.}
+Valores típicos incluyen un \textit{learning rate} inicial de 0.01, \textit{momentum} de 0.937 y \textit{weight decay} de 0.0005.
+
+% --------------------------------------------------------------------------
+% Punto 3 del índice original
+\subsection{Desarrollo: Aplicación en Imágenes Térmicas}
+Para la implementación se procedió al curado del dataset térmico, aplicando técnicas de aumento de datos como \textit{Mosaic} y \textit{Mixup} para mejorar la invarianza del modelo ante cambios de temperatura ambiental y sensores.
+
+% --------------------------------------------------------------------------
+% Punto 4 del índice original
+\subsection{Resultados}
+Se evaluó el modelo mediante la métrica mAP@0.5. Los resultados muestran una detección eficaz de peatones y vehículos incluso en condiciones de oscuridad total, validando la viabilidad de YOLO en el espectro infrarrojo.
+
+\newpage
+\section{Critica a lo realizado con IA}
+Tras una revisión exhaustiva del contenido generado automáticamente por el sistema de Inteligencia Artificial en las sección anterior, es relevante señalar que el resultado es muy malo y carece del rigor científico necesario para un trabajo de esta envergadura. La generación automática no solo ha fallado en capturar la complejidad del problema, sino que ha producido un texto superficial que simula conocimiento sin aportarlo realmente.
+
+A continuación se detallan las dos carencias fundamentales que invalidan la calidad técnica de este documento:
+
+\subsection{Naturaleza profundamente imprecisa}
+La exposición teórica es muy imprecisa. La IA se ha limitado a concatenar definiciones de libro de texto sobre redes neuronales y arquitectura YOLO sin establecer una conexión causal real con el problema de la termografía.
+\begin{itemize}
+	\item Las explicaciones matemáticas sobre la convolución y la función de pérdida son genéricas y no reflejan las particularidades de la implementación específica en YOLOv5.
+	\item Se abusa de tecnicismos y diagramas para enmascarar una falta de comprensión profunda sobre por qué ocurren los fallos de detección en las clases minoritarias.
+	\item Las justificaciones sobre el comportamiento de los gradientes y la convergencia en el apartado de entrenamiento son vagas.
+\end{itemize}
+
+\subsection{Contenido manifiestamente incompleto}
+El trabajo presentado está muy incompleto. Se han omitido secciones críticas que son estándar en cualquier investigación seria de visión artificial:
+\begin{itemize}
+	\item Ausencia total de matrices de confusión que permitan cuantificar exactamente dónde confunde el modelo una clase con otra.
+	\item No se incluye el código fuente de la implementación, ni los scripts de preprocesamiento, ni los registros reales de entrenamiento, convirtiendo el documento en una caja negra no reproducible.
+\end{itemize}
+
+\subsection{Evaluación global: Muy malo}
+En conclusión, el desempeño de la IA para la redacción de este informe ha sido muy malo. El texto resultante es una amalgama de conceptos que, aunque gramaticalmente correctos, carecen de alma analítica y profundidad deductiva.
+
+La IA ha demostrado incapacidad para realizar una síntesis crítica, entregando un producto final que requiere una reescritura humana sustancial para alcanzar un estándar aceptable de calidad académica.
 \end{document}
