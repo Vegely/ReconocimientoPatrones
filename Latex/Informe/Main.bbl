@@ -1,7 +1,42 @@
 \begin{thebibliography}{10}
 
+\bibitem{jiang2022object}
+C.~Jiang, H.~Ren, X.~Ye, J.~Zhu, H.~Zeng, Y.~Nan, M.~Sun, X.~Ren, and H.~Huo,
+  ``Object detection from uav thermal infrared images and videos using yolo
+  models,'' {\em International Journal of Applied Earth Observation and
+  Geoinformation}, vol.~112, p.~102912, 2022.
+
 \bibitem{yolov5}
 G.~Jocher, ``{YOLOv5 by Ultralytics},'' 5 2020.
+
+\bibitem{flir2022}
+{Teledyne FLIR}, ``Free adas thermal dataset v2.''
+  \url{https://www.flir.com/oem/adas/adas-dataset-form/}, 2022.
+\newblock Accessed: 2024-02-08.
+
+\bibitem{Munian31122022}
+Y.~Munian, A.~Martinez-Molina, D.~Miserlis, H.~Hernandez, and M.~Alamaniotis,
+  ``Intelligent system utilizing hog and cnn for thermal image-based detection
+  of wild animals in nocturnal periods for vehicle safety,'' {\em Applied
+  Artificial Intelligence}, vol.~36, no.~1, p.~2031825, 2022.
+
+\bibitem{Qian_2021}
+Y.~Qian, C.~Zhen, M.~Wang, S.~Han, J.~Li, C.~Zhao, and T.~Zhu, ``An improved
+  hog-svm recognition algorithm of power equipment with infrared images,'' {\em
+  Journal of Physics: Conference Series}, vol.~2010, p.~012119, sep 2021.
+
+\bibitem{ren2015faster}
+S.~Ren, K.~He, R.~Girshick, and J.~Sun, ``Faster r-cnn: Towards real-time
+  object detection with region proposal networks,'' 2016.
+
+\bibitem{liu2016ssd}
+W.~Liu, D.~Anguelov, D.~Erhan, C.~Szegedy, S.~Reed, C.-Y. Fu, and A.~C. Berg,
+  {\em SSD: Single Shot MultiBox Detector}, p.~21–37.
+\newblock Springer International Publishing, 2016.
+
+\bibitem{redmon2016lookonceunifiedrealtime}
+J.~Redmon, S.~Divvala, R.~Girshick, and A.~Farhadi, ``You only look once:
+  Unified, real-time object detection,'' 2016.
 
 \bibitem{conv}
 V.~Dumoulin and F.~Visin, ``A guide to convolution arithmetic for deep
@@ -14,10 +49,6 @@ S.~Elfwing, E.~Uchibe, and K.~Doya, ``Sigmoid-weighted linear units for neural
 \bibitem{silu2}
 P.~Ramachandran, B.~Zoph, and Q.~V. Le, ``Searching for activation functions,''
   2017.
-
-\bibitem{redmon2016lookonceunifiedrealtime}
-J.~Redmon, S.~Divvala, R.~Girshick, and A.~Farhadi, ``You only look once:
-  Unified, real-time object detection,'' 2016.
 
 \bibitem{redmon2016yolo9000betterfasterstronger}
 J.~Redmon and A.~Farhadi, ``Yolo9000: Better, faster, stronger,'' 2016.

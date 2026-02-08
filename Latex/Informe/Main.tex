@@ -18,6 +18,8 @@
 \usepackage{xcolor}
 \usepackage[most]{tcolorbox}
 \usepackage{amsfonts}
+\usepackage{url}
+\usepackage{dsfont}
 
 % --- Algoritmos ---
 \usepackage{algorithm}
@@ -56,13 +58,41 @@
 	\tableofcontents
 	\newpage
 
-	\section{Introducción a la clasificación de imágenes térmicas}
+	\section{Introducción a la detección de objetos en imágenes térmicas}
+	Hoy en día con el avance de la automatización en muchas aplicaciones es de vital importancia la percepción del entorno mediante visión artificial como pueden ser aplicaciones de seguridad o sistemas de conducción autónoma. Aunque el estándar en muchos casos sean imágenes con cámaras convencionales (RGB), en escenarios con mala iluminación como momentos con niebla o por la noche su rendimiento decae drásticamente. Por ello, para trabajar con estos contextos se utiliza la termografía infrarroja (TIR) como alternativa robusta capaz de capturar la radiación emitida por los cuerpos independientemente de la luz ambiental \cite{jiang2022object}.
+	\newline
 	
-	Usamos la version YOLOv5 \cite{yolov5}
-	Explicar el estado del arte un poco de que hay y tal.... redes tal, este otro tipo de clasificación
-	\subsection{Redes Convolucionales...}
+	No obstante, el procesamiento de imágenes térmicas presenta desafíos únicos que no aparecen en imágenes convencionales:
+	\begin{itemize}
+		\item 	Baja resolución motivada por el alto coste de los sensores. Esta limitación no es un problema en el conjunto de datos empleados en este trabajo.
+		\item Falta de información de color al solo tener un canal de información, texturas difusas y bajo contraste entre el objeto y el fondo, lo que genera efecto halo \cite{jiang2022object}.
+	\end{itemize}
+	
+	Para abordar este problema de detección y clasificación, en este trabajo se estudia la arquitectura YOLOv5 (You Only Look Once) \cite{yolov5}, validando su desempeño sobre el conjunto de datos estándar para sistemas avanzados de asistencia al conductor proporcionado por Teledyne FLIR \cite{flir2022}.
+	
+	\subsection{Estado del Arte en detección térmica}
+	Históricamente, la detección de objetos en imágenes infrarrojas se basaba en técnicas de visión computacional tradicionales que utilizaban características hechas a mano. Métodos como el Histograma de Gradientes Orientados (HOG) combinados con Máquinas de Soporte Vectorial (SVM) eran comunes \cite{Munian31122022} \cite{Qian_2021}, pero carecían de capacidad de generalización y robustez frente a la variabilidad térmica \cite{jiang2022object}.
+	\newline
+	
+	La revolución del aprendizaje profundo provocó que estas técnicas quedarán desfasadas propiciando el uso de Redes Neuronales Convolucionales (CNNs). En la literatura actual, los detectores modernos se dividen en dos categorías principales: 
+	\begin{itemize} 
+		\item \textbf{Detectores de dos etapas:} Modelos como R-CNN y sus variantes (Fast R-CNN, Faster R-CNN) \cite{ren2015faster}. Estos algoritmos generan primero una serie de propuestas de región y luego las clasifican. Aunque alcanzan una gran precisión, su alta carga computacional dificulta su implementación en tiempo real, un requisito indispensable en aplicaciones como la conducción autónoma. 
+		\item \textbf{Detectores de una etapa:} Modelos como SSD (Single Shot Multibox Detector) \cite{liu2016ssd} y la familia YOLO \cite{redmon2016lookonceunifiedrealtime}. Estos procesan la imagen y predicen las cajas delimitadoras en una única evaluación de la red, logrando un equilibrio óptimo entre velocidad y precisión.		
+	\end{itemize}
+	
+	Estudios recientes \cite{jiang2022object}, han demostrado que las arquitecturas basadas en YOLO, específicamente optimizadas para la banda infrarroja (imágenes térmicas), superan a los métodos de dos etapas en escenarios dinámicos donde la latencia es crítica.
+	
+	\subsection{Redes Neuronales Convolucionales (CNN)} 
+	Las Redes Neuronales Convolucionales (CNN) constituyen la base matemática de los sistemas de visión modernos. A diferencia de las redes neuronales densas clásicas (MLP), las CNNs están diseñadas para procesar datos con topología de rejilla (como imágenes), empleando la operación de convolución para extraer características espaciales de manera jerárquica.
+	\newline
+	
+	El principio fundamental reside en el uso de filtros o kernels que va aprendiendo la red que se deslizan sobre la imagen de entrada, generando mapas de características que representan patrones visuales de complejidad creciente: desde bordes y texturas simples en las capas iniciales, hasta formas y objetos completos en las capas profundas. Esta capacidad de extracción automática de características elimina la necesidad de diseñar descriptores manuales, permitiendo al modelo aprender las representaciones más relevantes directamente de los datos térmicos.
+	
 	\subsection{Metodología YOLO}
-	\newpage
+	La metodología YOLO  redefine el problema de la detección de objetos como un único problema de regresión, en contraposición al enfoque de clasificación de ventanas deslizantes. La arquitectura divide la imagen de entrada en una rejilla de $S \times S$, donde cada celda es responsable de predecir objetos si el centro de estos esta dentro.
+	\newline
+	
+	Para el desarrollo del proyecto hemos seleccionado la arquitectura YOLOv5 \cite{yolov5}. Aunque este modelo integra mejoras estructurales muy potentes como el backbone CSP-Darknet y el cuello PANet (detallados en la sección de topología de la red), la razón principal de esta elección ha sido su implementación nativa en Python. Al no depender del framework clásico en C, se puede agilizar la integración con otras librerías y simplificar considerablemente el flujo de trabajo.
 	\section{Fundamentos de funcionamiento de la red YOLO}
 	A continuación se desarrrolla el funcionamiento de la red YOLO mediante la teoría de Marr para lo cuál es necesario describir el nivel implementacional y algoritmico. En este caso las redes neuronales artificiales se componen de 3 componentes que se describirán a continuación:
 	\begin{itemize}
@@ -1209,18 +1239,18 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 				
 				\node [draw, dashed, fill=white, rounded corners, 
 				font=\sffamily\scriptsize, align=left, anchor=north west, 
-				at={($(c3_2.south) + (5, 6.0)$)}] {
+				at={($(c3_2.south) + (3, 6.0)$)}] {
 					\textbf{Leyenda:}\\
-					 \textbf{CV}: Capa de convolución. \\
-					 \textbf{C3-k}: Módulo CSPResNe(x)t o C3-k.\\
+					\textbf{CV}: Capa de convolución. \\
+					\textbf{C3-k}: Módulo CSPResNe(x)t o C3-k.\\
 					\textbf{SPPF}: Módulo SPFF.\\
 					\textbf{CSP}: Módulo de CSP o C3\\
-					\textbf{Resize}: Upsample / Redimensionado...\\
-					$W_{1}=\{32,3,6,6\}$: Capa convolucional de \\
-					$W_{2}=\{256,512,1,1\}$: Capa convolucional de \\
-					$W_{3}=\{128,256,1,1\}$: Capa convolucional de \\
-					$W_{4}=\{128,128,3,3\}$: Capa convolucional de \\
-					$W_{5}=\{256,256,3,3\}$: Capa convolucional de \\
+					\textbf{Resize}: Redimensionado de características.\\
+					$W_{1}=\{32,3,6,6\}$: Capa convolucional de entrada para reducir las dimensiones de la imágen.\\
+					$W_{2}=\{256,512,1,1\}$: Capa convolucional para redimensionar mapas de características.\\
+					$W_{3}=\{128,256,1,1\}$: Capa convolucional para redimensionar mapas de características. \\
+					$W_{4}=\{128,128,3,3\}$: Capa convolucional para traspasar la información de posición a resoluciones menores. \\
+					$W_{5}=\{256,256,3,3\}$: Capa convolucional para traspasar la información de posición a resoluciones menores. \\
 				};
 			\end{tikzpicture}
 		
@@ -1229,6 +1259,23 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	\end{figure}
 	\subsection{Reglas de entrenamiento}
 	El entrenamiento se realiza mediante el cálculo de la Intersección sobre la Unión (IoU) entre la predicción y el \textit{ground truth} térmico. Se utilizan funciones de pérdida como CIoU que consideran la distancia entre centros, la escala y el aspecto de la caja de detección.
+	
+	\subsubsection{Entrenamiento de la red}
+	La red YOLO se entrena mediante la técnica de retropropagación. Primero se realiza una pasada hacia delante en la que se calcula la salida de la red. Luego, se actualizan los pesos y sesgos por descenso del gradiente estocástico empezando por las capas finales y acabando en las iniciales. La función de pérdida a minimizar es de la forma \cite{redmon2016lookonceunifiedrealtime}:
+	
+	\begin{equation}
+	\begin{aligned}
+	f(x, y, w, h, C, p |\theta) &= \lambda_{\text{coord}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} \left[ (x_i - \hat{x}_i)^2 + (y_i - \hat{y}_i)^2 \right] \\
+	& + \lambda_{\text{coord}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} \left[ \left( \sqrt{w_i} - \sqrt{\hat{w}_i} \right)^2 + \left( \sqrt{h_i} - \sqrt{\hat{h}_i} \right)^2 \right] \\
+	& + \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} (C_i - \hat{C}_i)^2 \\
+	& + \lambda_{\text{noobj}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{noobj}} (C_i - \hat{C}_i)^2 \\
+	& + \sum_{i=0}^{S^2} \mathds{1}_i^{\text{obj}} \sum_{c \in \text{classes}}(p_i(c) - \hat{p}_i(c))^2
+	\end{aligned}
+	\end{equation}
+	
+	Donde $\mathds{1}_{i,j}^{\text{obj}}$ indica si un objeto aparece en la $j$-ésima caja de la $i$-ésima celda, $x_i$ e $y_i$ son las coordenadas del centro del objeto, $w_i$ y $h_i$ el ancho y el alto del objeto. La red tiene una confianza $\hat{C}_i = P(\text{Objeto}) \text{IoU}$ de que la caja que ha estimado contiene un objeto, que depende de la probabilidad que asigna a la existencia de dicho objeto. El valor real de la confianza será 0 si no hay objeto o la intersección sobre la unión si lo hay (si fuese 1 se estarían penalizando doblemente los errores de detección). Por último, $\hat{p}_i(c)$ corresponde a un término de clasificación, que representa la probabilidad que la red asigna a que el objeto pertenezca a una determinada clase.
+		
+	Los errores de detección en objetos grandes son menos graves que en los pequeños, por lo que se toma la raíz cuadrada en los términos de detección del ancho y alto para tener en cuenta este efecto. Además, se observan 2 hiperparámetros: $\lambda_{\text{coord}}$ y $\lambda_{\text{noobj}}$. Ambos tienen el propósito de incentivar a la red a detectar objetos aunque
 	
 	\subsubsection{Hiperparámetros}
 	Los hiperparámetros se organizan según se relacionen con la optimización del entrenamiento, la fase de calentamiento, la función de pérdida, el proceso de \textit{data augmentation} o la evaluación de la red.
@@ -1272,7 +1319,7 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	A nivel de implementación, el CLR se estructura en dos etapas:
 	
 	\begin{itemize}
-		\item Calentamiento (\textit{warmup}): es la fase inicial del entrenamiento, en la que la tasa de aprendizaje empieza en niveles bajos y sube gradualmente hasta alcanzar la tasa inicial. Evita el sobreajuste temprano hacia los primeros lotes de datos procesados, al restringir el tamaño de los pasos del gradiente. El hiperparámetro \texttt{warmup\_epochs} indica el número de épocas de calentamiento.
+		\item Calentamiento (\textit{warmup}): es la fase inicial del CLR, en la que la tasa de aprendizaje empieza en niveles bajos y sube gradualmente hasta alcanzar la tasa inicial. Evita el sobreajuste temprano hacia los primeros lotes de datos procesados, al restringir el tamaño de los pasos del gradiente. El hiperparámetro \texttt{warmup\_epochs} indica el número de épocas de calentamiento.
 		
 		Durante esta fase, la actualización de la tasa de aprendizaje sigue la dinámica:
 		
@@ -1287,25 +1334,14 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 		
 		Además, aparecen los hiperparámetros de control $lr_0$ y $lr_f$. El primero proporciona una referencia de la tasa inicial (de la fase de entrenamiento) objetivo a la que se quiere llegar al final del calentamiento. Cabe notar que esta tasa no es el objetivo como tal, sino que viene modulada por el número de la época. El número de iteraciones de calentamiento es en general menor que el número de iteraciones en una época. En tal caso, $\varepsilon_1 = 1$ y la tasa de aprendizaje al final del calentamiento es $lr_0$. En caso contrario (si se fija un valor diferente de 1 en \texttt{warmup\_epochs}), la tasa de aprendizaje acaba el calentamiento en un valor entre $lr_0$ y $lr_0 lr_f$. El segundo se refiere a un factor de escala de la tasa de aprendizaje, de forma que esta acaba en $lr_0 lr_f$ al final de la fase de entrenamiento.
 		
-		De las ecuaciones anteriores se deduce que el crecimiento de la tasa de aprendizaje durante el calentamiento sigue una curva. 
+		De las ecuaciones anteriores se deduce que el crecimiento de la tasa de aprendizaje durante el calentamiento sigue una curva que se ralentiza según avanza las épocas. Se trata de una interpolación lineal entre $\varepsilon_0$ y $\varepsilon_1 lr_0$, donde el término $\varepsilon_1$ va disminuyendo con las épocas, por lo que cada vez los incrementos ($n_i$ sigue creciendo) en la tasa de aprendizaje son menores.
 		
-		tamaño del lote  * warmup 
-		los pesos de los sesgos son diferentes a los de los pesos. Los sesgos van de \texttt{warmupbiaslr} hasta 
-		$$\eta = Y_0 + \frac{n_i}{n_w} (Y_1 - Y0)$$
+		\item Entrenamiento: corresponde con la segunda fase del CLR, en la que la tasa de aprendizaje decae desde el valor alcanzado en el calentamiento hasta el valor $lr_0 lr_f$ según la dinámica:
 		
-		Donde $Y_1 = (1 - \frac{e}{E})(1 - \eta_f) + \eta_f$
-		
-		La fase de calentamiento termina según $n_w = n_{warmup} nb$, siendo $n_w$ el número de épocas y $n_warmup$ un hiperparámetro que define el número de épocas de entrenamiento. 
-		
-		\item Entrenamiento:
-		$$\eta = (1 - \frac{e}{E})(1 - \eta_f) + \eta_f$$
-		
-		
+		$$\varepsilon = \varepsilon_0 ((1 - \frac{ep}{Ep})(1 - lr_f) + lr_f)$$		
 	\end{itemize}
 	
 	\begin{itemize}
-		\item Tasa de aprendizaje inicial (\texttt{lr0}):
-		\item Factor de la tasa de aprendizaje final (\texttt{lrf}):
 		\item Fuerza de la inercia en la actualización de gradientes (\texttt{momentum}):
 		\item Penalización para la regularización de los pesos (\texttt{weight\_decay}):
 	\end{itemize}
