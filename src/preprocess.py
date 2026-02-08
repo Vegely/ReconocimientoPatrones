@@ -210,4 +210,4 @@ def procesar_video(video_id, image_paths, model, output_dir, fps=25):
 for i, (clave, frames) in enumerate(grupos.items()):
     print(f"Procesando grupo {i}: {len(frames)} frames")
     procesar_video(f"video_{i:03d}", frames, model, output_dir)
-    
+
