@@ -4,6 +4,6 @@
 \beamer@subsectionintoc {2}{1}{Descripción de la Neurona}{6}{0}{2}
 \beamer@subsectionintoc {2}{2}{Topología de la Red}{10}{0}{2}
 \beamer@subsectionintoc {2}{3}{Entrenamiento de la Red e Hiperparámetros}{17}{0}{2}
-\beamer@sectionintoc {3}{Metodología}{20}{0}{3}
-\beamer@sectionintoc {4}{Resultados}{22}{0}{4}
-\beamer@sectionintoc {5}{Conclusión}{29}{0}{5}
+\beamer@sectionintoc {3}{Metodología}{23}{0}{3}
+\beamer@sectionintoc {4}{Resultados}{31}{0}{4}
+\beamer@sectionintoc {5}{Conclusión}{38}{0}{5}

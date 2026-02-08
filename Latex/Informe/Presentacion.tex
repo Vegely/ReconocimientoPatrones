@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
-% ELIMINADO: \usepackage{mathds} (Causaba el error y no se usa en el cuerpo)
+\usepackage{dsfont}
 
 % --- Gráficos y TikZ ---
 \usepackage{tikz}
@@ -22,6 +22,10 @@
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{fontawesome}
+\definecolor{myblue}{RGB}{70, 130, 180}
+\definecolor{mygreen}{RGB}{60, 179, 113}
+\definecolor{myred}{RGB}{220, 20, 60}
+\definecolor{myorange}{RGB}{255, 165, 0}
 % Configuración de TikZ y PGFPlots
 \pgfplotsset{compat=1.18}
 \usetikzlibrary{positioning, shapes.geometric, arrows.meta, calc, backgrounds, fit, shadows, patterns, babel}
@@ -31,11 +35,10 @@
 \usecolortheme{dolphin}
 \setbeamertemplate{navigation symbols}{}
 % --- Título ---
-\title[Reconocimiento de Patrones]{Trabajo: Técnicas de Reconocimiento de Patrones}
-\subtitle{Detección de objetos en imágenes térmicas con YOLOv5}
+\title[Reconocimiento de Patrones]{Técnicas de Reconocimiento de Patrones: }
+\subtitle{Uso de la arquitectura YOLOv5 para detección y clasificación de imágenes térmicas.}
 \author{J. Bengoa \and B. Barañski \and S. Izquierdo }
-\date{\today}
-
+\date{17/02/2026}
 \begin{document}
 	
 	% Solución para conflictos de caracteres en babel-spanish dentro de TikZ
@@ -1122,45 +1125,620 @@
 	\begin{frame}{Índice}
 		\tableofcontents[currentsubsection] 
 	\end{frame}
-	\begin{frame}{Entrenamiento: Función de Pérdida}
-		Optimización mediante descenso de gradiente estocástico.
-		\begin{block}{Componentes de la Loss}
+	% --- Slide 1: Función de Pérdida (YOLOv1 vs YOLOv5) ---
+	\begin{frame}{Función de Pérdida}
+		\textbf{Intuición (YOLOv1):}
+		\vspace{-0.1cm}
+	\begin{equation*}
+	\resizebox{\textwidth}{!}{%
+		$ \begin{aligned}
+		\mathcal{L} &= \lambda_{\text{coord}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} \left[ (x_i - \hat{x}_i)^2 + (y_i - \hat{y}_i)^2 \right] 
+		+ \lambda_{\text{coord}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} \left[ \left( \sqrt{w_i} - \sqrt{\hat{w}_i} \right)^2 + \left( \sqrt{h_i} - \sqrt{\hat{h}_i} \right)^2 \right] \\
+		& + \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{obj}} (C_i - \hat{C}_i)^2 
+		+ \lambda_{\text{noobj}} \sum_{i=0}^{S^2} \sum_{j=0}^B \mathds{1}_{i,j}^{\text{noobj}} (C_i - \hat{C}_i)^2 
+		+ \sum_{i=0}^{S^2} \mathds{1}_i^{\text{obj}} \sum_{c \in \text{classes}}(p_i(c) - \hat{p}_i(c))^2
+		\end{aligned} $ 
+	} 
+	\end{equation*}
+		
+		\vfill
+		
+		\textbf{Refinamiento (YOLOv5):}
+		% Ecuación en 1 sola línea
+		\begin{equation*}
+		\begin{aligned}
+		\mathcal{L} &= \lambda_{\text{loc}}\,\mathcal{L}_{\text{loc}}
+		+
+		\lambda_{\text{obj}}\,\mathcal{L}_{\text{obj}}
+		+
+		\lambda_{\text{cls}}\,\mathcal{L}_{\text{cls}} \\
+		&=\lambda_{\text{loc}}(1 - \mathrm{CIoU}) + \lambda_{\text{obj}}\,\mathrm{BCE}_{\text{obj}} + \lambda_{\text{cls}}\,\mathrm{BCE}_{\text{cls}}
+		\end{aligned}
+		\end{equation*}
+	\end{frame}
+	
+	% --- Slide 2: Decodificación y Estabilidad ---
+	\begin{frame}{Detección mediante cajas delimitadoras}
+		\begin{columns}
+			% --- Columna Izquierda: Ecuaciones y Explicación ---
+			\column{0.5\textwidth}
+			\textbf{Detección (cajas delimitadoras):}
+			\vspace{-0.2cm}
+			\small
+			\begin{align}
+			& b_x = [2\sigma(t_x) - 0.5] + c_x \nonumber \\
+			& b_y = [2\sigma(t_y) - 0.5] + c_y \nonumber \\
+			& b_w = p_w [2 \sigma(t_w)]^2 \nonumber \\
+			& b_h = p_h [2 \sigma(t_h)]^2 \nonumber
+			\end{align}
+			
+			\vspace{-0.1cm}
+			
+			% El recuadro para los Anchors
+			\begin{block}{Cajas predeterminadas ($p_w, p_h$)}
+				\footnotesize
+				Valores predefinidos de ancho y alto obtenidos mediante algoritmo \textbf{K-Means} sobre el set de entrenamiento.
+				\begin{itemize}
+					\item La red aprende factores de escala sobre estos moldes base en lugar de dimensiones absolutas desde cero.
+				\end{itemize}
+			\end{block}
+			
+			% --- Columna Derecha: Imagen ---
+			\column{0.5\textwidth}
+			\centering
+			\includegraphics[width=1\linewidth, keepaspectratio]{bbox.png}
+			\captionof{figure}{\scriptsize Esquema de predicción de coordenadas.}
+		\end{columns}
+	\end{frame}
+	
+	% --- Slide 3: Optimización CLR (Warmup + Entrenamiento) ---
+	\begin{frame}{Actualización de los pesos}
+		\small % Reducimos un poco la fuente global para que quepa todo bien
+		La actualización de pesos sigue la regla del \textbf{Descenso del Gradiente Estocástico}, usando \textbf{CLR} como \textit{scheduler} para la tasa de aprendizaje $\varepsilon$:
+		\vspace{-0.1cm}
+		\begin{equation*}
+		\theta_{i+1} = \theta_i - \varepsilon \nabla_{\theta} \mathcal{L}(\theta_i)
+		\end{equation*}
+		\vspace{-0.3cm}
+		
+		\begin{columns}[T]
+			% --- Columna Izquierda: Fórmulas ---
+			\column{0.5\textwidth}
+			\textbf{1. Fase de Calentamiento (Warmup):}
+			\vspace{-0.2cm}
+			\begin{align*}
+			\varepsilon &= \varepsilon_0 + \frac{n_i}{n_w} (\varepsilon_1 lr_0 - \varepsilon_0) \\
+			\varepsilon_1 &= \left(1 - \frac{ep}{Ep}\right)(1 - lr_f) + lr_f \\
+			n_i &= i + ep \cdot n_b \\
+			n_w &= \max(\text{\texttt{warmup\_epochs}} \cdot n_b, 100)
+			\end{align*}
+			
+			\vspace{-0.3cm}
+			\textbf{2. Fase de Entrenamiento:}
+			\vspace{-0.1cm}
 			\begin{equation*}
-				\mathcal{L} = \lambda_{coord} \mathcal{L}_{box} + \mathcal{L}_{obj} + \mathcal{L}_{cls}
+			\varepsilon = \varepsilon_0 \left[\left(1 - \frac{ep}{Ep}\right)(1 - lr_f) + lr_f\right]
+			\end{equation*}
+			
+			% --- Columna Derecha: Intuición e Imagen ---
+			\column{0.48\textwidth}
+			\vspace{-0.5cm} % Subimos el bloque
+			
+			\centering
+			\vspace{-0.1cm}
+			\includegraphics[width=\linewidth, height=3.5cm, keepaspectratio]{clr_vs_fixed.png}
+			\captionof{figure}{\scriptsize CLR (rojo) vs Fijo (azul).}
+			\vspace{-0.3cm}
+			\begin{alertblock}{Intuición}
+				\footnotesize
+				Usar CLR permite mantener tasas de aprendizaje altas. La convergencia es más rápida y evita mínimos locales.
+			\end{alertblock}
+		\end{columns}
+	\end{frame}
+
+	% --- Slide 4: Dinámica del Optimizador (Momento y L2) ---
+	\begin{frame}{Dinámica del Optimizador}
+		\begin{columns}[T]
+			% --- Columna Izquierda: Todo sobre Momento ---
+			\column{0.48\textwidth}
+			\begin{block}{Momento de Nesterov}
+				\footnotesize
+				Iérmino de momento $\mu \cdot v_i$ para evitar mínimos locales y acelerar en zonas planas:
+				\vspace{-0.1cm}
+				\begin{equation*}
+				\begin{cases}
+				\theta_{i+1} = \theta_i - \varepsilon v_{i+1} \\
+				v_{i+1} = \mu \cdot v_i + \nabla_{\theta}\mathcal{L}(\theta_i - \varepsilon \mu \cdot v_i)
+				\end{cases}
+				\end{equation*}
+				
+				\vspace{0.2cm}
+				\hrule % Línea separadora sutil
+				\vspace{0.2cm}
+				
+				\textbf{Calendario de Actualización:} \\
+				El momento crece linealmente durante el \textit{warmup} hasta fijarse en \texttt{momentum}:
+				\vspace{-0.1cm}
+				\begin{equation*}
+				\mu = \frac{n_i}{n_w}(\text{\texttt{mom}} - \text{\texttt{wup\_mom}}) + \text{\texttt{wup\_mom}}
+				\end{equation*}
+			\end{block}
+			
+			% --- Columna Derecha: Todo sobre L2 ---
+			\column{0.48\textwidth}
+			\begin{alertblock}{Regularización L2 (Weight Decay)}
+				\footnotesize
+				Penalización cuadrática de los pesos en la pérdida:
+				\vspace{-0.1cm}
+				\begin{equation*}
+				\mathcal{L}_{\text{reg}} = \mathcal{L}(\theta) + \frac{\text{\texttt{wd}}}{2}\sum_i \theta_i^2
+				\end{equation*}
+				
+				\vspace{0.2cm}
+				\hrule % Línea separadora sutil
+				\vspace{0.2cm}
+				
+				\textbf{Implementación Eficiente:} \\
+				Se integra la penalización en la regla de actualización, evitando la suma de los cuadrados de los pesos (\textit{forward}) y derivar el término del sumatorio (\textit{bacward}):
+				\vspace{-0.1cm}
+				\begin{equation*}
+				\theta_{i+1} = \theta_i (1 - \varepsilon \cdot \text{\texttt{wd}}) - \varepsilon \nabla_{\theta} \mathcal{L}(\theta_i)
+				\end{equation*}
+			\end{alertblock}
+		\end{columns}
+	\end{frame}
+	
+	\begin{frame}{Estrategias de Data Augmentation}
+		\centering
+		\tiny % Reducimos fuente para que quepa el grid 3x3
+		
+		% Definición de estilo común para los iconos
+		\tikzset{
+			augbox/.style={draw=blue!60!black, thick, fill=white, minimum size=0.8cm, inner sep=0pt},
+			ghost/.style={draw=gray!50, dashed, thick, minimum size=0.8cm},
+			imgfont/.style={font=\sffamily\bfseries\Large, text=blue!60!black}
+		}
+		
+		\begin{columns}[t]
+			% --- COLUMNA 1: Geometría Básica ---
+			\column{0.32\textwidth}
+			\centering
+			
+			% 1. Degrees
+			\textbf{\normalsize \texttt{degrees}}
+			\vspace{0.1cm}
+			\begin{tikzpicture}
+			\node[ghost] at (0,0) {};
+			\node[augbox, rotate=15] at (0,0) {\rotatebox{0}{F}};
+			\draw[-Latex, red, domain=60:30] plot ({0.6*cos(\x)}, {0.6*sin(\x)});
+			\end{tikzpicture}
+			\par\vspace{0.1cm}
+			\begin{minipage}{0.95\linewidth}
+				Gira la imagen aleatoriamente. Detecta objetos no verticales.
+			\end{minipage}
+			\vspace{0.3cm}
+			
+			% 2. Translate
+			\textbf{\normalsize \texttt{translate}}
+			\vspace{0.1cm}
+			\begin{tikzpicture}
+			\draw[gray!50, thick] (-0.5,-0.5) rectangle (0.5,0.5); % Frame
+			\node[augbox, xshift=0.3cm, yshift=0.2cm] at (0,0) {F};
+			\draw[-Latex, red] (0,0) -- (0.3,0.2);
+			\end{tikzpicture}
+			\par\vspace{0.1cm}
+			\begin{minipage}{0.95\linewidth}
+				Desplaza la imagen. Evita asociación por ubicaciones fijas.
+			\end{minipage}
+			\vspace{0.3cm}
+			
+			% 3. Scale
+			\textbf{\normalsize \texttt{scale}}
+			\vspace{0.1cm}
+			\begin{tikzpicture}
+			\node[ghost] at (0,0) {F};
+			\node[augbox, scale=1.3] at (0,0) {F};
+			\draw[-Latex, red] (0.5,0.5) -- (0.7,0.7);
+			\draw[-Latex, red] (-0.5,-0.5) -- (-0.7,-0.7);
+			\end{tikzpicture}
+			\par\vspace{0.1cm}
+			\begin{minipage}{0.95\linewidth}
+				Zoom in/out. Reconocimiento a diferentes tamaños.
+			\end{minipage}
+			
+			% --- COLUMNA 2: Distorsión y Perspectiva ---
+			\column{0.32\textwidth}
+			\centering
+			
+			% 4. Shear
+			\textbf{\normalsize \texttt{shear}}
+			\vspace{0.1cm}
+			\begin{tikzpicture}
+			\node[ghost] at (0,0) {F};
+			\node[augbox, xslant=0.5] at (0,0) {F};
+			\end{tikzpicture}
+			\par\vspace{0.1cm}
+			\begin{minipage}{0.95\linewidth}
+				Distorsión oblicua. Simula estiramiento desde una esquina.
+			\end{minipage}
+			\vspace{0.3cm}
+			
+			% 5. Perspective
+			\textbf{\normalsize \texttt{perspective}}
+			\vspace{0.1cm}
+			\begin{tikzpicture}
+			\node[ghost] at (0,0) {F};
+			% Simulación visual de perspectiva dibujando el trapezoide
+			\draw[blue!60!black, thick, fill=white] (-0.4,-0.5) -- (0.4,-0.4) -- (0.4,0.4) -- (-0.4,0.5) -- cycle;
+			\node[text=blue!60!black, font=\sffamily\bfseries\large, xscale=0.8, rotate=5] at (0,0) {F};
+			\end{tikzpicture}
+			\par\vspace{0.1cm}
+			\begin{minipage}{0.95\linewidth}
+				Transformación 3D. Simula cambios en el ángulo de la cámara.
+			\end{minipage}
+			\vspace{0.3cm}
+			
+			% 6. Flip
+			\textbf{\normalsize \texttt{flipud} / \texttt{fliplr}}
+			\vspace{0.1cm}
+			\begin{tikzpicture}
+			\node[augbox] at (-0.5,0) {F};
+			\draw[<->, red] (-0.1,0) -- (0.1,0);
+			\node[augbox, xscale=-1] at (0.5,0) {F};
+			\end{tikzpicture}
+			\par\vspace{0.1cm}
+			\begin{minipage}{0.95\linewidth}
+				Efecto espejo vertical u horizontal.
+			\end{minipage}
+			
+			
+			% --- COLUMNA 3: Composición de Imágenes ---
+			\column{0.32\textwidth}
+			\centering
+			
+			% 7. Mosaic
+			\textbf{\normalsize \texttt{mosaic}}
+			\vspace{0.1cm}
+			\begin{tikzpicture}
+			\draw[blue!60!black, thick] (-0.6,-0.6) rectangle (0.6,0.6);
+			\draw[blue!60!black] (0,-0.6) -- (0,0.6);
+			\draw[blue!60!black] (-0.6,0) -- (0.6,0);
+			\node[font=\tiny] at (-0.3,0.3) {A}; \node[font=\tiny] at (0.3,0.3) {B};
+			\node[font=\tiny] at (-0.3,-0.3) {C}; \node[font=\tiny] at (0.3,-0.3) {D};
+			\end{tikzpicture}
+			\par\vspace{0.1cm}
+			\begin{minipage}{0.95\linewidth}
+				Varias imágenes en una. Contextos variados y escalas simultáneas.
+			\end{minipage}
+			\vspace{0.3cm}
+			
+			% 8. Mixup
+			\textbf{\normalsize \texttt{mixup}}
+			\vspace{0.1cm}
+			\begin{tikzpicture}
+			\node[draw=blue, thick, fill=blue!20, minimum size=0.8cm, opacity=0.7] at (-0.2,0.1) {\textbf{A}};
+			\node[draw=red, thick, fill=red!20, minimum size=0.8cm, opacity=0.7] at (0.2,-0.1) {\textbf{B}};
+			\end{tikzpicture}
+			\par\vspace{0.1cm}
+			\begin{minipage}{0.95\linewidth}
+				Mezcla de dos imágenes con transparencia.
+			\end{minipage}
+			\vspace{0.3cm}
+			
+			% 9. Copy Paste
+			\textbf{\normalsize \texttt{copy\_paste}}
+			\vspace{0.1cm}
+			\begin{tikzpicture}
+			\node[augbox, fill=gray!10] at (0,0) {}; % Fondo
+			\node[font=\tiny, gray] at (0,0.3) {Escena};
+			% Objeto pegado
+			\node[star, star points=5, star point ratio=2.25, draw=orange, fill=yellow, inner sep=1pt, minimum size=0.4cm] at (0.2,-0.2) {};
+			\draw[->, red, dashed] (-0.5, -0.5) -- (0.1, -0.25);
+			\end{tikzpicture}
+			\par\vspace{0.1cm}
+			\begin{minipage}{0.95\linewidth}
+				Pega objetos de una imagen en otra nueva.
+			\end{minipage}
+			
+		\end{columns}
+	\end{frame}
+	
+
+\section{Metodología}
+\begin{frame}{Índice}
+	\tableofcontents[currentsection] 
+\end{frame}
+\begin{frame}{Preprocesamiento: De COCO a YOLO}
+	\begin{columns}
+		\column{0.5\textwidth}
+		\begin{itemize}
+			\item 
+			
+			\textbf{Transformación de Coordenadas}
+			\begin{itemize}
+				\item \textbf{Entrada (COCO):} Esquina superior izq. $(x_{min}, y_{min})$ y dimensiones absolutas.
+				\item \textbf{Salida (YOLO):} Centro $(x_c, y_c)$ y dimensiones normalizadas $[0,1]$.
+			\end{itemize}
+			\vspace{0.5cm}
+			\footnotesize
+			\begin{equation*}
+			\begin{aligned}
+			x_c &= x_{min} + w/2 \\
+			y_c &= y_{min} + h/2 \\
+			\text{Norm} &\rightarrow \text{dividir por } W_{img}, H_{img}
+			\end{aligned}
+			\end{equation*}
+			\item \textbf{Conversión de fichero JSON (COCO) a fichero txt (YOLO)}
+		\end{itemize}
+		\column{0.5\textwidth}
+		\centering
+		\begin{tikzpicture}[scale=0.8, font=\scriptsize]
+		% Imagen completa
+		\draw[thick, fill=gray!10] (0,0) rectangle (6,4);
+		\node[anchor=south east] at (6,0) {Imagen ($W_{img}, H_{img}$)};
+		
+		% Ejes
+		\draw[->] (0,4) -- (1,4) node[right] {$x$};
+		\draw[->] (0,4) -- (0,3) node[below] {$y$};
+		
+		% Bounding Box
+		\draw[thick, blue, fill=blue!10, fill opacity=0.5] (2,1.5) rectangle (4.5, 3);
+		
+		% Puntos COCO
+		\fill[red] (2,3) circle (2pt) node[above left] {$(x_{min}, y_{min})$};
+		\draw[<->, red] (2, 3.2) -- (4.5, 3.2) node[midway, above] {$w_{caja}$};
+		\draw[<->, red] (1.8, 1.5) -- (1.8, 3) node[midway, left] {$h_{caja}$};
+		
+		% Puntos YOLO
+		\fill[mygreen] (3.25, 2.25) circle (2pt) node[below] {$(x_{centro}, y_{centro})$};
+		\draw[dashed, mygreen] (3.25, 2.25) -- (3.25, 0);
+		\draw[dashed, mygreen] (3.25, 2.25) -- (0, 2.25);
+		
+		\end{tikzpicture}
+	\end{columns}
+\end{frame}
+
+% --- Diapositiva 2: Configuración del Entrenamiento ---
+\begin{frame}{Configuración del Entrenamiento y Hardware}
+	\begin{columns}
+		\column{0.6\textwidth}
+		\begin{block}{Adaptación a Imágenes Térmicas}
+			\begin{itemize}
+				\item Modificación de la capa de entrada: \textbf{1 canal} (Escala de grises).
+				\item \textbf{Desactivación} de aumentos de color (HSV) para preservar la coherencia térmica.
+			\end{itemize}
+		\end{block}
+		
+		\begin{block}{Hiperparámetros (\texttt{train.py})}
+			\begin{itemize}
+				\item \textbf{Modelo Base:} YOLOv5s (Transfer Learning).
+				\item \textbf{Épocas:} 500.
+				\item \textbf{Batch size:} 64.
+				\item \textbf{Resolución:} $640 \times 640$.
+			\end{itemize}
+		\end{block}
+		
+		\column{0.4\textwidth}
+		\centering
+		\begin{tikzpicture}
+		\node[draw, fill=black!80, text=white, rounded corners, minimum width=3cm, minimum height=4cm, align=center] (hpc) {
+			\textbf{Nodo HPC}\\ \vspace{0.2cm}
+			\includegraphics[width=1cm]{example-image-a} \\ \vspace{0.1cm} % Placeholder para icono GPU
+			NVIDIA A100 \\ (Ampere) \\ \vspace{0.2cm}
+			192 GiB RAM \\
+			SSD M.2
+		};
+		\end{tikzpicture}
+	\end{columns}
+\end{frame}
+
+% --- Diapositiva 3: Métricas - IoU ---
+\begin{frame}{Evaluación: Intersección sobre Unión (IoU)}
+	La calidad de la localización se mide comparando el área de la predicción con la etiqueta real (Ground Truth).
+	
+	\vspace{0.5cm}
+	
+	\centering
+	\begin{tikzpicture}[scale=1]
+	% Definición de cajas
+	\def\boxA{(0,0) rectangle (3,2)} % Ground Truth
+	\def\boxB{(1.5,0.5) rectangle (4,3)} % Predicción
+	
+	% Dibujar Unión (contorno)
+	\draw[thick, dashed, fill=gray!20] (0,0) -- (3,0) -- (3,0.5) -- (4,0.5) -- (4,3) -- (1.5,3) -- (1.5,2) -- (0,2) -- cycle;
+	\node at (0.5, 0.5) {GT};
+	\node at (3.5, 2.5) {Pred};
+	
+	% Dibujar Intersección
+	\begin{scope}
+	\clip \boxA;
+	\fill[pattern=north east lines, pattern color=myblue] \boxB;
+	\end{scope}
+	\draw[thick, myred] (1.5,0.5) rectangle (3,2);
+	
+	% Etiquetas
+	\node[myblue, font=\bfseries] at (2.25, 1.25) {Intersección};
+	\node[below] at (2, -0.2) {Unión = Área Total - Intersección};
+	
+	% Fórmula
+	\node[right, align=left] at (5, 1.5) {
+		$\text{IoU} = \frac{\text{Área Intersección}}{\text{Área Unión}}$ \\\\  \vspace{0.5cm}
+		$\text{IoU} \in [0, 1]$
+	};
+	\end{tikzpicture}
+\end{frame}
+
+% --- Diapositiva 4: Matriz de Confusión y Clasificación ---
+\begin{frame}{Clasificación de Predicciones}
+	Para construir la matriz de confusión, cada predicción se clasifica según su IoU y su clase.
+	
+	\vspace{0.3cm}
+	\centering
+	\resizebox{0.95\textwidth}{!}{
+		\begin{tikzpicture}[node distance=1.5cm, auto, font=\small]
+		% Estilos
+		\tikzstyle{decision} = [diamond, draw, fill=yellow!20, text width=4.5em, text centered, inner sep=0pt]
+		\tikzstyle{block} = [rectangle, draw, fill=blue!10, text width=6em, text centered, rounded corners, minimum height=3em]
+		\tikzstyle{result} = [rectangle, draw, fill=green!20, text width=6em, text centered, rounded corners]
+		\tikzstyle{fail} = [rectangle, draw, fill=red!20, text width=6em, text centered, rounded corners]
+		\tikzstyle{line} = [draw, -latex', thick]
+		
+		% Nodos
+		\node [block] (pred) {Predicción ($Conf > Th$)};
+		\node [decision, right of=pred, node distance=3.5cm] (iou) {¿IoU $\ge$ Umbral?};
+		\node [decision, right of=iou, node distance=3.5cm] (class) {¿Clase Correcta?};
+		\node [result, right of=class, node distance=3.5cm] (tp) {\textbf{TP}\\(Verdadero Positivo)};
+		\node [fail, below of=class, node distance=2.5cm] (fp) {\textbf{FP}\\(Falso Positivo)};
+		\node [fail, below of=pred, node distance=2.5cm] (fn) {\textbf{FN}\\(Etiqueta sin match)};
+		
+		% Conexiones
+		\path [line] (pred) -- (iou);
+		\path [line] (iou) -- node {Sí} (class);
+		\path [line] (class) -- node {Sí} (tp);
+		\path [line] (iou.south) |- node [near start] {No} (fp.west); % Baja directo a FP visualmente ajustado
+		\path [line] (class) -- node {No} (fp);
+		
+		
+		% FN logic
+		\node [block, left of=fn, node distance=3cm, fill=gray!10] (gt) {Etiquetas reales};
+		\path [line] (gt) -- node [above] {} (fn);
+		
+		\end{tikzpicture}
+	}
+\end{frame}
+
+% --- Diapositiva 5: Métricas Globales (mAP) ---
+% --- Diapositiva 1: Métricas Estándar ---
+\begin{frame}{Métricas de Desempeño (I): Evaluación Puntual}
+	\begin{columns}[t] % [t] alinea las columnas arriba
+		
+		% Columna Izquierda (Ancho reducido al 48% para dejar margen)
+		\column{0.48\textwidth}
+		\begin{block}{Precisión ($P$)}
+			Fiabilidad de las detecciones positivas.
+			\begin{equation*}
+			\text{Precisión} = \frac{TP}{TP + FP}
 			\end{equation*}
 		\end{block}
-		\begin{itemize}
-			\item \textbf{Cajas:} CIoU (Distancia centros, escala, aspecto). Penaliza errores en objetos pequeños ($\sqrt{w}, \sqrt{h}$).
-			\item \textbf{Objetos:} Confianza $\hat{C}_i = P(\text{Obj}) \cdot \text{IoU}$.
-			\item \textbf{Clases:} Probabilidad condicional de etiqueta.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}{Hiperparámetros y Optimizacion}
-		\begin{itemize}
-			\item \textbf{CLR (Cyclical Learning Rate):} Variación cíclica para escapar de mínimos locales y buscar super-convergencia.
-			\item \textbf{Warmup (Calentamiento):}
-			\begin{itemize}
-				\item Inicia con tasa baja y sube gradualmente ($\varepsilon_0 \to \varepsilon_1$).
-				\item Evita sobreajuste temprano y gradientes explosivos al inicio.
-			\end{itemize}
-			\item \textbf{Data Augmentation:}
-			\begin{itemize}
-				\item Ruido Gaussiano (simular condiciones atmosféricas).
-				\item Mosaico, Mixup, rotaciones y ajustes HSV.
-			\end{itemize}
-		\end{itemize}
-	\end{frame}
-	
-	\section{Metodología}
-	\begin{frame}{Índice}
-		\tableofcontents[currentsection] 
-	\end{frame}
-	\begin{frame}{Resultados y Conclusión}
 		
+		\vspace{0.3cm} % Espacio vertical para que no se peguen los bloques
 		
-		\textbf{Conclusión:} YOLO + Sensores Térmicos es una solución robusta para vigilancia nocturna, superando limitaciones de cámaras RGB mediante análisis morfológico de firmas térmicas.
-	\end{frame}
+		\begin{block}{Recall ($R$)}
+			Capacidad del modelo para encontrar todos los objetos reales.
+			\begin{equation*}
+			\text{Recall} = \frac{TP}{TP + FN}
+			\end{equation*}
+		\end{block}
+		
+		% Columna Derecha
+		\column{0.48\textwidth}
+		\begin{block}{F1-Score}
+			Media armónica entre Precisión y Recall (balance único).
+			\begin{equation*}
+			F_1 = 2 \cdot \frac{\text{Precisión} \cdot \text{Recall}}{\text{Precisión} + \text{Recall}}
+			\end{equation*}
+		\end{block}
+		
+		\vspace{0.3cm} % Espacio vertical
+		
+		\begin{block}{IoU Media}
+			Calidad media de la localización geométrica de los aciertos.
+			\begin{equation*}
+			\text{IoU media (TP)} = \frac{1}{TP} \sum \text{IoU}_{\text{TP}}
+			\end{equation*}
+		\end{block}
+	\end{columns}
+\end{frame}
+% --- Diapositiva 2: Métricas Globales ---
+\begin{frame}{Métricas de Desempeño (II): AP y mAP}
+	\begin{columns}
+		% Columna Izquierda: Definiciones Matemáticas
+		\column{0.5\textwidth}
+		\begin{block}{Average Precision (AP)}
+			Área bajo la curva P-R (aproximación por sumatoria de rectángulos):
+			\begin{equation*}
+			AP = \sum_k (R_{k+1} - R_k) \cdot P_{k+1}
+			\end{equation*}
+		\end{block}
+		
+		\begin{block}{mean Average Precision (mAP)}
+			Promedio ponderado por la frecuencia de cada clase ($n_c$) para mitigar el desbalanceo:
+			\begin{equation*}
+			mAP = \sum_{c=1}^{N} \underbrace{\frac{n_c}{\sum n_k}}_{w_c} \cdot AP_c
+			\end{equation*}
+		\end{block}
+		
+		% Columna Derecha: Gráfico Explicativo
+		\column{0.5\textwidth}
+		\centering
+		\begin{tikzpicture}[scale=0.8]
+		\begin{axis}[
+		xlabel={Recall ($R$)},
+		ylabel={Precision ($P$)},
+		xmin=0, xmax=1,
+		ymin=0, ymax=1,
+		grid=both,
+		axis lines=left,
+		width=6.5cm, height=5.5cm,
+		title={Cálculo del AP (Área bajo la curva)},
+		label style={font=\footnotesize},
+		title style={font=\footnotesize}
+		]
+		% Curva PR
+		\addplot[color=myblue, thick, smooth] coordinates {
+			(0,1) (0.2,0.95) (0.5,0.85) (0.7,0.7) (0.9,0.4) (1,0)
+		};
+		% Área sombreada
+		\addplot[fill=myblue, fill opacity=0.2] coordinates {
+			(0,1) (0.2,0.95) (0.5,0.85) (0.7,0.7) (0.9,0.4) (1,0) (0,0)
+		};
+		
+		% Rectángulos visuales de integración
+		\draw[myred, thin] (axis cs:0.2,0) rectangle (axis cs:0.5,0.85);
+		\draw[myred, thin] (axis cs:0.5,0) rectangle (axis cs:0.7,0.7);
+		
+		\node[myred, font=\scriptsize] at (axis cs:0.6, 0.35) {$\Delta R \cdot P$};
+		\end{axis}
+		\end{tikzpicture}
+	\end{columns}
+\end{frame}
+
+% --- Diapositiva 6: Eficiencia y Visualización ---
+\begin{frame}{Eficiencia y Visualización Cualitativa}
+	\begin{columns}
+		\column{0.5\textwidth}
+		\textbf{Eficiencia Computacional}
+		\begin{equation*}
+		FPS = \frac{\text{Total Imágenes}}{\text{Tiempo Procesamiento}}
+		\end{equation*}
+		Permite validar la viabilidad en tiempo real.
+		
+		\vspace{1cm}
+		\textbf{Visualización (\texttt{video\_process.py})}
+		\begin{itemize}
+			\item Generación de vídeo a 25 FPS.
+			\item Comparativa visual Frame a Frame.
+		\end{itemize}
+		
+		\column{0.5\textwidth}
+		\centering
+		\begin{tikzpicture}
+		% Marco de imagen
+		\node[anchor=south west, inner sep=0] (image) at (0,0) {\includegraphics[width=5cm, height=3.5cm]{example-image}}; % Placeholder imagen
+		
+		% Caja Predicción (Verde solido)
+		\draw[mygreen, very thick] (1,1) rectangle (2.5, 2.5);
+		\node[mygreen, above, font=\tiny\bfseries] at (1.75, 2.5) {Pred: Persona 0.85};
+		
+		% Caja Ground Truth (Rojo discontinuo)
+		\draw[myred, very thick, dashed] (1.1, 0.9) rectangle (2.6, 2.6);
+		\node[myred, below, font=\tiny\bfseries] at (1.85, 0.9) {GT: Persona};
+		
+		% Leyenda simulada
+		\node[draw, fill=white, font=\tiny] at (2.5, 4) {Verde: Predicción | Rojo: Etiqueta};
+		\end{tikzpicture}
+	\end{columns}
+\end{frame}
 	
 	
 	\section{Resultados}
@@ -1348,25 +1926,61 @@
 		\end{center}
 	\end{frame}
 	
-	\section{Conclusión}
-		\begin{frame}{Índice}
-		\tableofcontents[currentsection] 
-	\end{frame}
-		\begin{frame}{Resultados y Conclusión}
-		\begin{block}{Implementación}
-			\begin{itemize}
-				\item \textbf{Entrada:} $640 \times 640$ monocanal (conversión 8-bits).
-				\item \textbf{Dataset:} Teledyne FLIR (ADAS).
-			\end{itemize}
-		\end{block}
+\section{Conclusión}
+\begin{frame}{Índice}
+	\tableofcontents[currentsection] 
+\end{frame}
+\begin{frame}{Conclusión}
+	\begin{block}{Validación de Arquitectura}
+		Se demuestra la viabilidad de adaptar YOLOv5 (RGB) al espectro \textbf{infrarrojo}, centrando el aprendizaje en la morfología y huella térmica.
+	\end{block}
+	
+	\vspace{0.3cm}
+	
+	\begin{itemize}
+		\item \textbf{Rendimiento Cuantitativo:} 
+		\begin{itemize}
+			\item mAP global de \textbf{0.475} (comparable al estado del arte YOLOv4).
+			\item Alta precisión ($AP > 0.6$) en clases críticas: \textbf{Coche} y \textbf{Persona}.
+		\end{itemize}
 		
-		\begin{alertblock}{Métricas Obtenidas}
-			\begin{itemize}
-				\item \textbf{mAP (Precisión Media):} 0.91 en peatones (oscuridad total).
-				\item \textbf{Latencia:} 22ms por cuadro (Tiempo real).
-			\end{itemize}
-		\end{alertblock}
+		\vspace{0.2cm}
 		
-		\textbf{Conclusión:} YOLO + Sensores Térmicos es una solución robusta para vigilancia nocturna, superando limitaciones de cámaras RGB mediante análisis morfológico de firmas térmicas.
-	\end{frame}
+		\item \textbf{Eficiencia Computacional:}
+		\begin{itemize}
+			\item Arquitectura de una sola etapa validada.
+			\item 4.3 FPS en CPU $\rightarrow$ Escalabilidad garantizada para tiempo real en hardware dedicado (GPU/FPGA).
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+% --- Diapositiva 2: Limitaciones y Futuro ---
+\begin{frame}{Limitaciones y Líneas Futuras}
+	\begin{alertblock}{Limitaciones Críticas}
+		\begin{itemize}
+			\item \textbf{Desbalanceo de Datos:} La detección es casi nula en clases minoritarias (bicicletas, perros) debido a la hegemonía de coches y personas.
+			\item \textbf{Ambigüedad Térmica:} Falsos positivos en \textit{Señales} por falta de textura/color.
+			\item \textbf{Seguridad:} Se detectaron fallos en peatones vulnerables (niños). No apto aún para autonomía completa sin fusión de sensores.
+		\end{itemize}
+	\end{alertblock}
+	
+	\vspace{0.3cm}
+	\textbf{Propuestas de Trabajo Futuro:}
+	\begin{enumerate}
+		\item \textbf{Remuestreo:} Técnicas para equilibrar la distribución de clases.
+		\item \textbf{Agrupación Semántica:} Fusión de etiquetas de vehículos grandes.
+		\item \textbf{Información Temporal:} Arquitecturas híbridas para evitar pérdidas de detección en fotogramas consecutivos.
+	\end{enumerate}
+\end{frame}
+
+% --- Diapositiva Final: Preguntas ---
+\begin{frame}[plain]
+	\centering
+	\vspace{1cm}
+	
+	\Huge \textbf{¿Preguntas?}
+	
+	\vspace{1.5cm}
+	\large \textit{Gracias por su atención}
+\end{frame}
 \end{document}
