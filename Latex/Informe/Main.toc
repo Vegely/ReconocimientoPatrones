@@ -5,17 +5,16 @@
 \contentsline {subsection}{\numberline {1.3}Metodología YOLO}{3}{}%
 \contentsline {section}{\numberline {2}Fundamentos de funcionamiento de la red YOLO}{3}{}%
 \contentsline {subsection}{\numberline {2.1}Neurona de la red YOLO}{3}{}%
-\contentsline {subsection}{\numberline {2.2}Topología de la red}{6}{}%
-\contentsline {subsubsection}{\numberline {2.2.1}Backbone: Extracción de Características}{11}{}%
-\contentsline {subsubsection}{\numberline {2.2.2}Neck: Fusión de Escalas}{11}{}%
-\contentsline {subsubsection}{\numberline {2.2.3}Head: Detección}{12}{}%
-\contentsline {subsection}{\numberline {2.3}Reglas de entrenamiento}{13}{}%
-\contentsline {subsubsection}{\numberline {2.3.1}Entrenamiento de la red}{14}{}%
-\contentsline {subsubsection}{\numberline {2.3.2}Hiperparámetros}{15}{}%
-\contentsline {paragraph}{Optimización del entrenamiento}{15}{}%
-\contentsline {paragraph}{Fase de calentamiento (\textit {Warmup})}{17}{}%
-\contentsline {paragraph}{Función de pérdida}{17}{}%
-\contentsline {paragraph}{\textit {Data augmentation}}{17}{}%
-\contentsline {paragraph}{Evaluación de la red}{17}{}%
-\contentsline {section}{\numberline {3}Desarrollo: Aplicación en Imágenes Térmicas}{18}{}%
-\contentsline {section}{\numberline {4}Resultados}{18}{}%
+\contentsline {subsection}{\numberline {2.2}Topología de la red}{5}{}%
+\contentsline {subsubsection}{\numberline {2.2.1}Backbone: Extracción de Características}{10}{}%
+\contentsline {subsubsection}{\numberline {2.2.2}Neck: Fusión de Escalas}{10}{}%
+\contentsline {subsubsection}{\numberline {2.2.3}Head: Detección}{10}{}%
+\contentsline {subsection}{\numberline {2.3}Reglas de entrenamiento}{12}{}%
+\contentsline {subsubsection}{\numberline {2.3.1}Entrenamiento de la red}{12}{}%
+\contentsline {subsubsection}{\numberline {2.3.2}Hiperparámetros}{13}{}%
+\contentsline {paragraph}{Fase de calentamiento (\textit {Warmup})}{15}{}%
+\contentsline {paragraph}{Función de pérdida}{15}{}%
+\contentsline {paragraph}{\textit {Data augmentation}}{15}{}%
+\contentsline {paragraph}{Evaluación de la red}{16}{}%
+\contentsline {section}{\numberline {3}Desarrollo: Aplicación en Imágenes Térmicas}{16}{}%
+\contentsline {section}{\numberline {4}Resultados}{16}{}%
