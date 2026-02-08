@@ -20,6 +20,7 @@
 \usepackage{amsfonts}
 \usepackage{url}
 \usepackage{dsfont}
+\usepackage{hyperref}
 
 % --- Algoritmos ---
 \usepackage{algorithm}
@@ -1396,43 +1397,59 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 		\end{equation}	
 	\end{itemize}
 	
-	\begin{itemize}
-		\item Fuerza de la inercia en la actualización de gradientes (\texttt{momentum}):
-		\item Penalización para la regularización de los pesos (\texttt{weight\_decay}):
-	\end{itemize}
+	\paragraph{Momento}
+	A la actualización de los pesos por descenso del gradiente se puede añadir un término de momento:
 	
-	\paragraph{Fase de calentamiento (\textit{Warmup})}
-	Configuraciones temporales para estabilizar el modelo en las iteraciones iniciales.
-	\begin{itemize}
-		\item \texttt{warmup\_epochs}: Duración de la fase de estabilidad inicial.
-		\item \texttt{warmup\_momentum}: Momentum reducido para el arranque.
-		\item \texttt{warmup\_bias\_lr}: Tasa de aprendizaje específica para los sesgos iniciales.
-	\end{itemize}
+	\begin{equation}
+	\begin{cases}
+		& \theta_{i+1} = \theta_i - \varepsilon v_{i+1} \\
+		& v_{i+1} = \mu \cdot v_i + \nabla_{\theta}\mathcal{L}(\theta_i - \varepsilon \mu \cdot v_t)
+	\end{cases}
+	\end{equation}
 	
-	\paragraph{Función de pérdida}
-	Determinan la importancia relativa de cada error cometido por el modelo.
-	\begin{itemize}
-		\item \texttt{box}: Peso del error en la localización de las cajas.
-		\item \texttt{obj}: Importancia del error en la detección de presencia de objetos.
-		\item \texttt{cls}: Peso del error en la clasificación de las categorías.
-	\end{itemize}
+	Donde $v_i$ representa la velocidad de descenso en el $i$-ésimo instante y $\mu$ es el términos de momento. Intuitivamente, puede entenderse desde el punto de vista de un sistema en movimiento. Si el sistema estaba descendiendo en la dirección dada por el gradiente, es esperable que en el instante siguiente conserve una componente de bajada en dicha dirección, $\mu \cdot v_i$. Este término puede ser de utilidad para escapar de mínimos locales en los que un descenso del gradiente clásico se detendría. También permite descender rápidamente por zonas planas al acumular el movimiento en el instante anterior (aceleración).
+	
+	La expresión anterior corresponde a una modificación del momento acelerado de Nesterov\cite{sutskever2013importance}, en el que se evalúa la dirección de descenso del gradiente en el futuro al tener en cuenta el término de momento. De esta forma, el optimizador anticipa si la dirección actual lleva a un aumento de la función de pérdida y actúa como mecanismo de frenado o corrección de la trayectoria.
+	
+	Al igual que la tasa de aprendizaje, se puede establecer un calendario para el momento. En YOLOv5 se controla con los hiperparámetros \texttt{warmup\_momentum} y \texttt{momentum}, que se relacionan según:
+	
+	\begin{equation}
+		\mu = \frac{n_i}{n_w}(\text{\texttt{momentum}} - \text{\texttt{warmup\_momentum}}) + \text{\texttt{warmup\_momentum}}
+	\end{equation}
+	
+	Es decir, el momento crece linealmente durante el calentamiento y se establece en el valor indicado en \texttt{momentum} durante la fase de entrenamiento.
+	
+	\paragraph{Penalización L$_2$}
+	Se implementa a través del hiperparámetro \texttt{weight\_decay}, que controla el nivel de regularización. Por lo tanto, la expresión de la función de pérdida regularizada quedaría como:
+	
+	\begin{equation}
+		\mathcal{L}_{\text{reg}} = \mathcal{L}(\theta) + \frac{\text{\texttt{weight\_decay}}}{2}\sum_i \theta_i^2
+	\end{equation}
+	
+	La expresión anterior implica sumar el cuadrado de los pesos en cada pasada hacia delante y derivar el término adicional del sumatorio en cada pasada hacia atrás en el algoritmo de retropropagación. Por motivos de eficiencia computacional, se pueden evitar estos cálculos modificando la regla de actualización en el descenso del gradiente de la siguiente manera:
+	
+	\begin{equation}
+		\theta_{i+1} = \theta_i + \varepsilon \nabla_{\theta}\left(\mathcal{L}(\theta_i) + \frac{\text{\texttt{weight\_decay}}}{2} \theta_i^2 \right) = \theta_i (1 - \varepsilon \cdot \text{\texttt{weight\_decay}}) - \varepsilon \nabla_{\theta} \mathcal{L}(\theta_i)
+	\end{equation}
+	
+	Nótese que el producto $\varepsilon \cdot \texttt{weight\_decay}$ es siempre menor que 1, por lo que fuerza los pesos a valores pequeños.
+	
 	
 	\paragraph{\textit{Data augmentation}}
-	Parámetros que rigen las transformaciones aleatorias para mejorar la robustez.
-	\begin{itemize}
-		\item \textit{Color}: Ajustes de tono (\texttt{hsv\_h}), saturación (\texttt{hsv\_s}) y brillo (\texttt{hsv\_v}).
-		\item \textit{Geometría}: Rotación (\texttt{degrees}), traslación (\texttt{translate}) y escalado (\texttt{scale}).
-		\item \textit{Mezcla}: Probabilidades de técnicas como \texttt{mosaic} o \texttt{mixup}.
-	\end{itemize}
+	YOLOv5 emplea\textit{data augmentation} para enriquecer el conjunto de datos de entrenamiento y mejorar la capacidad de generalización del modelo. Esta técnica consiste en aplicar transformaciones aleatorias a las imágenes, de forma que el modelo no solo ve más ejemplos, sino que también aprende a reconocer objetos en contextos variados y frente a distorsiones. Algunas de las ventajas son que ayuda a reducir el sobreajuste y aumenta su robustez frente a diversas situaciones. Los hiperparámetros que controlan las transformaciones se describen brevemente a continuación:
 	
-	\paragraph{Evaluación de la red}
-	Parámetros que rigen las transformaciones aleatorias para mejorar la robustez.
 	\begin{itemize}
-		\item \textit{Color}: Ajustes de tono (\texttt{hsv\_h}), saturación (\texttt{hsv\_s}) y brillo (\texttt{hsv\_v}).
-		\item \textit{Geometría}: Rotación (\texttt{degrees}), traslación (\texttt{translate}) y escalado (\texttt{scale}).
-		\item \textit{Mezcla}: Probabilidades de técnicas como \texttt{mosaic} o \texttt{mixup}.
+		\item \texttt{hsv\_h}, \texttt{hsv\_s}, \texttt{hsv\_v}: alteran el tono, la saturación y el brillo de la imagen, respectivamente. Sirven para que el modelo entienda los cambios en la iluminación y colores de los objetos. Al usarse imágenes térmicas, no aplican. 
+		\item \texttt{degrees}: gira la imagen aleatoriamente dentro de un rango de grados. Ayuda a detectar objetos que no están perfectamente verticales.
+		\item \texttt{translate}: desplaza la imagen hacia los lados, arriba o abajo. Evita que el modelo aprenda a asociar objetos a ubicaciones específicas.
+		\item \texttt{scale}: realiza un zoom (acerca o aleja) a la imagen. Es crucial para que la red aprenda a reconocer objetos de diferentes tamaño.
+		\item \texttt{shear}: distorsiona la imagen de forma oblicua, como si se estirase desde una esquina. Ayuda a manejar cambios de perspectiva.
+		\item \texttt{perspective}: aplica una transformación 3D para simular que la imagen fue tomada desde un ángulo diferente.
+		\item \texttt{flipud}, \texttt{fliplr}: voltea la imagen verticalmente (arriba-abajo) u horizontalmente (izquierda-derecha), respectivamente.
+		\item \texttt{mosaic}: combina varias imágenes en una sola. Ayuda a que la red aprenda a identificar objetos en contextos variados y en diferentes escalas simultáneamente.
+		\item \texttt{mixup}: superpone dos imágenes con cierta transparencia. 
+		\item \texttt{copy\_paste}: toma objetos de una imagen y los pega en otra. Aumentar la presencia de clases poco comunes en escenarios nuevos.
 	\end{itemize}
-	
 	
 	\section{Desarrollo: Aplicación en Imágenes Térmicas}
 	Para usar YOLO con imágenes térmicas, el proceso técnico seguido es:
@@ -1442,11 +1459,48 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 		\item \textbf{Entrenamiento:} Ajuste del modelo sobre un dataset de $640 \times 640$ píxeles, optimizando los pesos para detectar firmas térmicas en entornos nocturnos.
 	\end{enumerate}
 	
-	\section{Resultados}
-Los resultados muestran que el modelo YOLO es capaz de distinguir entre un ser vivo y un objeto inanimado con una temperatura similar gracias al análisis morfológico.
+\section{Resultados}
 
+Antes de pasar a comentar los resultados es relevante destacar que al realizar el análisis preliminar de los datos se observa un severo desequilibrio de clases como una limitación crítica. Esto condicionará el aprendizaje del modelo, favoreciendo la predicción de las clases con mayor presencia en detrimento de las demás, tal como se evidenciará en los resultados. La Tabla \ref{tab:dataset-dist} resume el conteo de muestras por clase.
 
-En el caso general:
+\begin{table}[H]
+	\centering
+	\begin{tabular}{lrrr}
+		\toprule
+		\textbf{Clase} & \textbf{Entrenamiento} & \textbf{Validación} & \textbf{Test} \\
+		\midrule
+		Persona & 50,478 & 4,470 & 12,323 \\
+		Coche & 73,623 & 7,133 & 30,517 \\
+		Señal & 20,770 & 2,472 & 5,660 \\
+		Semáforo & 16,198 & 2,005 & 6,758 \\
+		Bicicleta & 7,237 & 170 & 113 \\
+		Moto & 1,116 & 55 & 3,314 \\
+		Camión & 829 & 46 & 2,634 \\
+		Autobús & 2,245 & 179 & 0 \\
+		Otro vehículo & 1,373 & 63 & 696 \\
+		Boca de incendios & 1,095 & 94 & 277 \\
+		Perro & 4 & 0 & 25 \\
+		Tren & 5 & 0 & 0 \\
+		Ciervo & 8 & 0 & 0 \\
+		Monopatín & 29 & 3 & 0 \\
+		Cochecito & 15 & 6 & 0 \\
+		Scooter & 15 & 0 & 0 \\
+		\midrule
+		\textbf{Total} & \textbf{175,040} & \textbf{16,696} & \textbf{62,317} \\
+		\bottomrule
+	\end{tabular}
+	\caption{Distribución de muestras por conjunto de datos (Entrenamiento, Validación y Test)}
+	\label{tab:dataset-dist}
+\end{table}
+
+Tras evaluar el conjunto de test con las métricas definidas, se obtuvieron los resultados globales del modelo de clasificación. Se alcanzó un mAP de 0.475, cifra comparable al rendimiento reportado en el estado del arte para YOLOv4 \cite{bochkovskiy2020yolov4optimalspeedaccuracy}, lo que valida el desempeño general del modelo.
+
+Como se aprecia en la Figura \ref{fig:metricsvsconfidence}, el sistema destaca por su alta precisión, manteniéndose consistentemente por encima de 0.7. Esto indica una gran fiabilidad en las detecciones positivas y una correcta localización de las coordenadas (IoU). Sin embargo, la sensibilidad (Recall) se identifica como la principal limitación. El modelo omite una parte significativa de los objetos presentes en las imágenes. Este comportamiento es atribuible, principalmente, al severo desbalanceo de clases en el conjunto de entrenamiento, afectando la capacidad de generalización en categorías minoritarias.	
+
+Finalmente, es necesario definir el umbral de confianza, un parámetro configurable en el análisis que representa el umbral para dar por válida una predicción del modelo YOLO al asignar una clase a un objeto detectado. Para seleccionar este valor, se emplea el F1-Score (media armónica entre sensibilidad y precisión) buscando maximizar la precisión, pero sin comprometer la sensibilidad para poder detectar objetos.
+
+Del análisis de la curva se desprende un valor óptimo general de aproximadamente 0.38, punto donde se equilibra la precisión con la capacidad de detección antes de que esta última decaiga drásticamente. No obstante, dado que el comportamiento del modelo varía según el objeto, es importante destacar que este umbral se calibra de manera específica para cada categoría individual.
+
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.7\linewidth]{metrics_vs_confidence}
@@ -1454,6 +1508,16 @@ En el caso general:
 	\label{fig:metricsvsconfidence}
 \end{figure}
 
+
+Al realizar un análisis pormenorizado por clase, como se muestra en las Figuras \ref{fig:metrics_part1} y \ref{fig:metrics_part2}, se distingue claramente qué categorías es capaz de predecir el modelo y cuáles no.
+
+En primer lugar, para las clases bicicleta, boca de incendios, perro y otros vehículos, el modelo no logra realizar detecciones, lo cual se evidencia en una curva de sensibilidad plana que indica que no se predice ningún objeto de estas categorías. Por el contrario, en las clases coche y persona, el rendimiento es muy competitivo, alcanzando valores de $AP>0.6$, lo que confirma que el modelo es muy fiable para su detección.
+
+Respecto al resto de clases, aunque el modelo intenta realizar predicciones, su capacidad de detección es baja (baja sensibilidad y métrica AP). Es reseñable el caso del camión y la señal, donde el modelo carece de fiabilidad, no solo no detecta la totalidad de objetos, sino que genera falsos positivos asignando estas etiquetas incorrectamente (precisión $<$ 0.5). En el caso específico de la señal, el análisis visual sugiere que, en imágenes térmicas urbanas, es difícil distinguirlas de otros elementos rectangulares del entorno.
+
+Por todo lo anterior, se propone eliminar de las predicciones las clases bicicleta, camión, boca de incendios, señal, perro y otros vehículos debido a su falta de fiabilidad. Además, para los vehículos de gran tamaño, se podría plantear la recombinación de etiquetas para evaluar si el modelo mejora al buscar simplemente vehículos grandes sin distinguir el tipo específico. Esto se justifica dado que, en la aplicación de conducción autónoma, lo prioritario es localizar el objeto y conocer su tipología general.
+
+Finalmente, cabe destacar que, incluso en los casos donde el modelo falla, a menudo sí logra localizar la existencia de un objeto. Por tanto, la problemática principal reside en la clasificación errónea más que en la detección del objeto en sí.
 
 
 \begin{figure}[H]
@@ -1502,6 +1566,8 @@ En el caso general:
 		\caption{Métricas para la clase semáforo.}
 	\end{subfigure}
 	
+	
+	
 	\caption{Métricas de rendimiento del clasificador para las categorías: persona, bicicleta, coche, moto, camión y semáforo.}
 	\label{fig:metrics_part1}
 \end{figure}
@@ -1544,6 +1610,17 @@ En el caso general:
 	\label{fig:metrics_part2}
 \end{figure}
 
+La última gráfica a analizar es la curva Precisión-Recall mostrada en la Figura \ref{fig:precision-recall}, la cual ofrece una visión comparativa compacta del rendimiento entre todas las categorías. En este tipo de gráfica, el desempeño ideal se representa por una curva que se mantiene en la zona superior derecha (alta precisión y alta sensibilidad simultáneamente).
+
+El análisis de las curvas revela una estratificación del rendimiento en tres grupos diferenciados, lo que corrobora visualmente el impacto del desbalanceo de datos discutido previamente:
+
+\begin{itemize}
+	\item \textbf{Clases de alto rendimiento (Coche y Persona):} Representadas por las curvas verde y azul respectivamente, muestran un comportamiento robusto. Mantienen una precisión casi perfecta ($>$ 0.9) hasta alcanzar valores de sensibilidad (recall) cercanos a 0.7. Esto implica que el modelo es capaz de recuperar la mayoría de las instancias de estas clases con muy pocos falsos positivos.
+	\item \textbf{Clases de rendimiento medio (Semáforo, Moto, Señal):} Sus curvas comienzan con alta precisión pero decaen drásticamente ante aumentos mínimos de sensibilidad. Es notable el caso de la clase \textit{Señal} (curva cian) y \textit{Camión} (curva rosa), que cruzan rápidamente por debajo de la línea de referencia de precisión 0.5 (línea discontinua azul). Esto confirma gráficamente la baja fiabilidad detectada, es decir, el modelo sacrifica demasiada precisión (cometiendo muchos errores) para intentar detectar más objetos de estas clases.
+	\item \textbf{Clases de rendimiento nulo (Bicicleta, Perro, Boca de incendios):} Estas categorías aparecen colapsadas en la esquina inferior izquierda (cercanas al origen), con áreas bajo la curva prácticamente nulas. Esto valida la decisión de descartar estas predicciones, ya que el modelo no ha logrado extraer características generalizables para ellas durante el entrenamiento.
+\end{itemize}
+
+En conclusión, la gráfica evidencia que el modelo está altamente especializado en las clases mayoritarias, mientras que su capacidad de generalización para las clases minoritarias es insuficiente, siendo este el principal factor que penaliza el mAP global del sistema.
 
 \begin{figure}[H]
 	\centering
@@ -1551,9 +1628,16 @@ En el caso general:
 	\caption{Curva precisión recall.}
 	\label{fig:precision-recall}
 \end{figure}
+
+
+Finalmente, se llevó a cabo una inspección visual del modelo, disponible en el siguiente \href{https://youtu.be/RnpR_AB2PWA}{\color{blue}{vídeo}}, para contrastar los resultados numéricos con un entorno real. Aunque cualitativamente el modelo aparenta un desempeño superior al sugerido por las métricas, se confirman las problemáticas descritas: la generación de falsos positivos en señales (detectando señales donde no las hay) y dificultades ocasionales con vehículos de gran tamaño. Sin embargo, el fallo más crítico se observa entre los segundos 30 y 35, donde el sistema es incapaz de detectar a un niño cruzando la carretera, lo cual representa un riesgo de seguridad mayor.
+
+Pese a estas limitaciones, el sistema demuestra ser un clasificador competente para la identificación general de obstáculos en carretera en el contexto de la conducción autónoma, siempre que se disponga de los recursos de hardware adecuados.
+
+En cuanto al costo computacional, las pruebas de inferencia realizadas en un equipo con CPU Intel Core i7-10510U, RAM 8 GB DDR4 y GPU Intel UHD Graphics, arrojaron una velocidad media de 4.3 FPS, lo que equivale a una latencia de 232 ms por imagen.
 	
-	\bibliographystyle{ieeetr}
-	\bibliography{bibliografia} 
+\bibliographystyle{ieeetr}
+\bibliography{bibliografia} 
 	
 	
 \end{document}

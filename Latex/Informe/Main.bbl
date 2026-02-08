@@ -82,4 +82,9 @@ L.~N. Smith and N.~Topin, ``Super-convergence: Very fast training of neural
   networks using large learning rates. arxiv,'' {\em arXiv preprint
   arXiv:1708.07120}, vol.~6, 2017.
 
+\bibitem{sutskever2013importance}
+I.~Sutskever, J.~Martens, G.~Dahl, and G.~Hinton, ``On the importance of
+  initialization and momentum in deep learning,'' in {\em International
+  conference on machine learning}, pp.~1139--1147, pmlr, 2013.
+
 \end{thebibliography}

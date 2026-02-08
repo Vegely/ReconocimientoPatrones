@@ -7,45 +7,45 @@ Reallocating 'name_of_file' (item size: 1) to 13 items.
 Database file #1: bibliografia.bib
 Warning--entry type for "yolov5" isn't style-file defined
 --line 227 of file bibliografia.bib
-You've used 19 entries,
+You've used 20 entries,
             1876 wiz_defined-function locations,
-            565 strings with 6618 characters,
-and the built_in function-call counts, 4014 in all, are:
-= -- 338
-> -- 252
+            572 strings with 6840 characters,
+and the built_in function-call counts, 4428 in all, are:
+= -- 380
+> -- 266
 < -- 0
-+ -- 91
-- -- 72
-* -- 236
-:= -- 583
-add.period$ -- 22
-call.type$ -- 19
-change.case$ -- 17
++ -- 96
+- -- 76
+* -- 264
+:= -- 634
+add.period$ -- 23
+call.type$ -- 20
+change.case$ -- 18
 chr.to.int$ -- 0
-cite$ -- 19
-duplicate$ -- 177
-empty$ -- 387
-format.name$ -- 72
-if$ -- 992
+cite$ -- 20
+duplicate$ -- 200
+empty$ -- 427
+format.name$ -- 76
+if$ -- 1095
 int.to.chr$ -- 0
-int.to.str$ -- 19
-missing$ -- 8
-newline$ -- 63
-num.names$ -- 19
-pop$ -- 114
+int.to.str$ -- 20
+missing$ -- 9
+newline$ -- 66
+num.names$ -- 20
+pop$ -- 120
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 0
-skip$ -- 166
+skip$ -- 184
 stack$ -- 0
-substring$ -- 70
-swap$ -- 76
+substring$ -- 110
+swap$ -- 87
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
 type$ -- 0
 warning$ -- 0
-while$ -- 24
-width$ -- 21
-write$ -- 156
+while$ -- 28
+width$ -- 22
+write$ -- 166
 (There was 1 warning)
