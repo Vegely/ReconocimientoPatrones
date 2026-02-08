@@ -1,10 +1,13 @@
 \babel@toc {spanish}{}\relax 
 \contentsline {section}{\numberline {1}Introducción a la clasificación de imágenes térmicas}{2}{}%
 \contentsline {subsection}{\numberline {1.1}Redes Convolucionales...}{2}{}%
-\contentsline {subsection}{\numberline {1.2}Metodología Yolo}{2}{}%
-\contentsline {section}{\numberline {2}Fundamentos de funcionamiento de la red Yolo}{3}{}%
-\contentsline {subsection}{\numberline {2.1}Neurona de la red Yolo}{3}{}%
+\contentsline {subsection}{\numberline {1.2}Metodología YOLO}{2}{}%
+\contentsline {section}{\numberline {2}Fundamentos de funcionamiento de la red YOLO}{3}{}%
+\contentsline {subsection}{\numberline {2.1}Neurona de la red YOLO}{3}{}%
 \contentsline {subsection}{\numberline {2.2}Topología de la red}{5}{}%
-\contentsline {subsection}{\numberline {2.3}Reglas de entrenamiento}{11}{}%
-\contentsline {section}{\numberline {3}Desarrollo}{11}{}%
-\contentsline {section}{\numberline {4}Resultados}{11}{}%
+\contentsline {subsubsection}{\numberline {2.2.1}Backbone: Extracción de Características}{10}{}%
+\contentsline {subsubsection}{\numberline {2.2.2}Neck: Fusión de Escalas}{10}{}%
+\contentsline {subsubsection}{\numberline {2.2.3}Head: Detección}{11}{}%
+\contentsline {subsection}{\numberline {2.3}Reglas de entrenamiento}{13}{}%
+\contentsline {section}{\numberline {3}Desarrollo}{13}{}%
+\contentsline {section}{\numberline {4}Resultados}{13}{}%

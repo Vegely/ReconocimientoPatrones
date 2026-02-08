@@ -58,12 +58,12 @@
 
 	\section{Introducción a la clasificación de imágenes térmicas}
 	
-	Usamos la version YOLO v5 \cite{yolov5}
+	Usamos la version YOLOv5 \cite{yolov5}
 	Explicar el estado del arte un poco de que hay y tal.... redes tal, este otro tipo de clasificación
 	\subsection{Redes Convolucionales...}
-	\subsection{Metodología Yolo}
+	\subsection{Metodología YOLO}
 	\newpage
-	\section{Fundamentos de funcionamiento de la red Yolo}
+	\section{Fundamentos de funcionamiento de la red YOLO}
 	A continuación se desarrrolla el funcionamiento de la red YOLO mediante la teoría de Marr para lo cuál es necesario describir el nivel implementacional y algoritmico. En este caso las redes neuronales artificiales se componen de 3 componentes que se describirán a continuación:
 	\begin{itemize}
 		\item Caracterización de la neurona.
@@ -71,7 +71,7 @@
 		\item Definición de unas reglas de entrenamiento.
 	\end{itemize}
 	
-	\subsection{Neurona de la red Yolo}
+	\subsection{Neurona de la red YOLO}
 	La unidad fundamental de procesamiento en la arquitectura YOLO es la capa convolucional (típica de las CNN). En esta sección se describe el funcionamiento de dicha operación, tomando como caso de estudio la capa de entrada, analizando tanto el entrenamiento específico realizado para imágenes térmicas como la implementación por defecto, tal como se ilustra en la Figura \ref{fig:neuronaInit}.
 	\begin{figure}[H]
 		\centering
@@ -250,16 +250,16 @@
 	\end{equation}
 	\newpage
 	\subsection{Topología de la red}
-	En esta sección se discute la topología de la red tras analizar los artículos principales de los creadores de Yolo \cite{redmon2016lookonceunifiedrealtime}\cite{redmon2016yolo9000betterfasterstronger}\cite{redmon2018yolov3incrementalimprovement}\cite{bochkovskiy2020yolov4optimalspeedaccuracy} y su diagrama de conexión mediante la herramienta \textit{Netron} donde se introduce la red en formato \textit{.onnx} para su análisis, un ejemplo de parte de la red se puede ver en la figura \ref{fig:fotoneutron}.
+	En esta sección se discute la topología de la red tras analizar los artículos principales de los creadores de YOLO \cite{redmon2016lookonceunifiedrealtime}\cite{redmon2016yolo9000betterfasterstronger}\cite{redmon2018yolov3incrementalimprovement}\cite{bochkovskiy2020yolov4optimalspeedaccuracy} y su diagrama de conexión mediante la herramienta \textit{Netron} donde se introduce la red en formato \textit{.onnx} para su análisis, un ejemplo de parte de la red se puede ver en la figura \ref{fig:fotoneutron}.
 	
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.7\linewidth]{FotoNeutron}
-		\caption{Ejemplo de parte de la red Yolo en la aplicación \textit{Netron}.}
+		\caption{Ejemplo de parte de la red YOLO en la aplicación \textit{Netron}.}
 		\label{fig:fotoneutron}
 	\end{figure}
 	
-	Uno de los bloques que más se repite a lo largo de la arquitectura de la red Yolo es el bloque ResNet, cuya estructura se encuentra representada en la figura \ref{fig:standard_bottleneck}. La filosofía detrás del diseño de este bloque viene detallada en el artículo  \cite{he2015deepresiduallearningimage}, y su objetivo principal se mejorar el rendimiento de las redes neuronales profundas cuando se acumulan múltiples capas.
+	Uno de los bloques que más se repite a lo largo de la arquitectura de la red YOLO es el bloque ResNet, cuya estructura se encuentra representada en la figura \ref{fig:standard_bottleneck}. La filosofía detrás del diseño de este bloque viene detallada en el artículo  \cite{he2015deepresiduallearningimage}, y su objetivo principal se mejorar el rendimiento de las redes neuronales profundas cuando se acumulan múltiples capas.
 	\newline
 	
 	La problemática surge durante el entrenamiento: al acumular múltiples capas consecutivas, los gradientes tienden a explotar. Antes de la existencia de este bloque, esto se mitigaba mediante la normalización en capas intermedias, pero aun así se observaba una degradación en la convergencia. Para entender esta degradación, se puede entender la operación de convolución como una aplicación identidad con cierto ruido superpuesto que representa las características a extraer. Por tanto, mediante una conexión lineal directa se optimiza el comportamiento del método de optimización utilizado, mejorando así la convergencia. 
@@ -394,7 +394,7 @@
 		\label{fig:fotoresnet}
 	\end{figure}
 	
-	El siguiente bloque básico dentro de la arquitectura Yolo es el bloque CSP o C3. La filosofía detrás del bloque representado en la figura \ref{fig:csp_bottleneck} se basa en el artículo \cite{wang2019cspnetnewbackboneenhance}. Este componente, se diseña para mejorar la ineficiencia dentro de las redes convolucionales asociada a la duplicidad de información en el gradiente.	Esta problemática, se debe a que los gradientes de retropropagación se copian y repiten a través de las diferentes capas, lo que genera cálculos redundantes que no contribuyen significativamente al aprendizaje de características nuevas. Para mitigarlo la arquitectura CSP envía el mapa de características de entrada a través de los canales base $C$ para procesarlo en dos ramas en paralelo.
+	El siguiente bloque básico dentro de la arquitectura YOLO es el bloque CSP o C3. La filosofía detrás del bloque representado en la figura \ref{fig:csp_bottleneck} se basa en el artículo \cite{wang2019cspnetnewbackboneenhance}. Este componente, se diseña para mejorar la ineficiencia dentro de las redes convolucionales asociada a la duplicidad de información en el gradiente.	Esta problemática, se debe a que los gradientes de retropropagación se copian y repiten a través de las diferentes capas, lo que genera cálculos redundantes que no contribuyen significativamente al aprendizaje de características nuevas. Para mitigarlo la arquitectura CSP envía el mapa de características de entrada a través de los canales base $C$ para procesarlo en dos ramas en paralelo.
 	\newline
 	
 	 Como se observa en la figura \ref{fig:csp_bottleneck}, tras la concatenación de entrada, el flujo se bifurca. Una rama principal procesa la información mediante una secuencia de capas convolucionales (representadas por los pesos $W_1$, $W_2$ y $W_3$), mientras que una rama parcial conecta directamente la entrada con el final del bloque a través de una única capa (peso $W_1$ inferior). Esta división permite que el gradiente se propague por dos caminos distintos, aumentando la variabilidad del aprendizaje y reduciendo la cantidad de operaciones. Por tanto, dada una entrada \(x\),  la red procesa obtiene el tensor de salida \(y\) como la concatenación de las dos ramas en paralelo:
@@ -526,7 +526,7 @@
 	
 Una variante fundamental de la arquitectura CSP es el bloque CSPResNe(X)t o C3-k, el cual sustituye las secuencias convolucionales estándar por bloques ResNet para potenciar la extracción de características. Su representación esquemática se detalla en la figura \ref{fig:c3_final}, y su diseño se fundamenta nuevamente en el artículo \cite{wang2019cspnetnewbackboneenhance}. \newline
 
-La filosofía de este diseño reside en la concatenación en serie de bloques ResNet, repetidos un número $k$ de veces según la complejidad de las características a modelar. Esto convierte al bloque C3-k en el mecanismo principal para controlar la profundidad de la red Yolo. Al concentrar la mayor densidad de procesamiento, este módulo se especializa en la extracción profunda de características.
+La filosofía de este diseño reside en la concatenación en serie de bloques ResNet, repetidos un número $k$ de veces según la complejidad de las características a modelar. Esto convierte al bloque C3-k en el mecanismo principal para controlar la profundidad de la red YOLO. Al concentrar la mayor densidad de procesamiento, este módulo se especializa en la extracción profunda de características.
 \newline
 
 En consecuencia, la integración de los módulos ResNet resulta crítica para la estabilidad del entrenamiento. Como se ha discutido previamente, las conexiones residuales mitigan el desvanecimiento del gradiente, permitiendo que el modelo converja y aprenda adecuadamente incluso al aumentar la profundidad de la red. 
@@ -657,7 +657,7 @@ Analizando el esquema, es relevante destacar la función específica de cada eta
 	\end{figure}
 	
 	
-El siguiente bloque relevante en Yolo es el representado en la figura \ref{fig:sppf_cascade} que es una variación optimizada del módulo SPP descrito en el artículo \cite{He_2014}. Esta variación optimizada  se denomina \textit{Spatial Pyramid Pooling Fast} (SPPF). Este módulo, introducido en la arquitectura Yolo \cite{yolov5}, tiene como objetivo principal permitir que la red analice simultáneamente el contexto global de la imagen y los detalles locales mediante una estructura en cascada que optimiza la velocidad de procesamiento.
+El siguiente bloque relevante en YOLO es el representado en la figura \ref{fig:sppf_cascade} que es una variación optimizada del módulo SPP descrito en el artículo \cite{He_2014}. Esta variación optimizada  se denomina \textit{Spatial Pyramid Pooling Fast} (SPPF). Este módulo, introducido en la arquitectura YOLO \cite{yolov5}, tiene como objetivo principal permitir que la red analice simultáneamente el contexto global de la imagen y los detalles locales mediante una estructura en cascada que optimiza la velocidad de procesamiento.
 \newline
 
 La filosofía original del SPP \cite{He_2014} propone procesar el mapa de características mediante ventanas de pooling en paralelo con diferentes tamaños de kernel ($k=\{1, 5, 9, 13\}$) para capturar contextos de distinto tamaño. Sin embargo, la variante SPPF logra un resultado matemático equivalente mediante una estructura en cascada más eficiente. En lugar de ejecutar múltiples ramas paralelas, pasa la entrada secuencialmente a través de varias capas de Max Pooling de tamaño $5\times5$. El Max Pooling se define como el valor máximo dentro de una ventana deslizante sobre el mapa de características:
@@ -801,7 +801,7 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 		\label{fig:sppf_cascade}
 	\end{figure}
 	
-	El último bloque funcional de la red Yolo es la cabeza de detección, representada en la figura \ref{fig:yolo_head_detail}. Este módulo está constituido por tres ramas independientes que operan en paralelo, cuyas salidas se procesan para generar el vector final con todas las predicciones de la imagen.
+	El último bloque funcional de la red YOLO es la cabeza de detección, representada en la figura \ref{fig:yolo_head_detail}. Este módulo está constituido por tres ramas independientes que operan en paralelo, cuyas salidas se procesan para generar el vector final con todas las predicciones de la imagen.
 	\newline
 	
 	La estrategia detrás de este cabezal de procesamiento es el de detección de objetos de diferente tamaño.  Para ello, la cabeza de salida procesa mapas de características en tres resoluciones espaciales distintas, denotadas como $i=\{1, 2, 3\}$, donde cada nivel se especializa en un rango de detección específico:
@@ -811,7 +811,7 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 		\item \textbf{Nivel $i=3$ (Baja Resolución):} Utiliza mapas de características reducidos de $20 \times 20$. Aunque la resolución espacial es menor, cada característica en este mapa contiene información condensada de una gran región de la imagen original, siendo la rama responsable de detectar objetos grandes.
 	\end{enumerate}
 	
-	Internamente, el diseño del cabezal es el factor determinante que permite clasificar a la arquitectura YOLO como una Red Totalmente Convolucional (FCN) \cite{long2015fullyconvolutionalnetworkssemantic}. Esta configuración marca una diferencia sustancial respecto a los detectores clásicos, los cuales finalizaban con capas totalmente conectadas (estructuras tipo perceptrón) que obligaban a redimensionar cualquier imagen de entrada a un tamaño fijo de salida. Por el contrario, en Yolo se sustituyen estas capas por una convolución final de tamaño $1\times1$ que elimina esta restricción dimensional.
+	Internamente, el diseño del cabezal es el factor determinante que permite clasificar a la arquitectura YOLO como una Red Totalmente Convolucional (FCN) \cite{long2015fullyconvolutionalnetworkssemantic}. Esta configuración marca una diferencia sustancial respecto a los detectores clásicos, los cuales finalizaban con capas totalmente conectadas (estructuras tipo perceptrón) que obligaban a redimensionar cualquier imagen de entrada a un tamaño fijo de salida. Por el contrario, en YOLO se sustituyen estas capas por una convolución final de tamaño $1\times1$ que elimina esta restricción dimensional.
 	\newline
 	
 	Esta operación inicial es crítica, ya que actúa como la interfaz de traducción entre el espacio de características latentes y el espacio de predicción. Su función específica es proyectar la profundidad del tensor entrante para que coincida matemáticamente con las dimensiones requeridas en la salida. 
@@ -954,7 +954,43 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 	
 	\newpage
 	
-	La implementación final se obtiene del análisis de la estructura \ref{fig:yolo_vertical_start}
+	Por último, se detalla la arquitectura global representada en la Figura \ref{fig:yolo_vertical_start}. Este diseño constituye una evolución directa de las metodologías propuestas en la familia de detectores YOLO a través de los artículos descritos anteriormente. Aunque este esquema específico corresponde a la implementación de YOLOv5, su diseño modular se fundamenta en ir integrando los avances definidos en la literatura científica previamente, comenzando con la versión original del detector de una sola etapa \cite{redmon2016lookonceunifiedrealtime} hasta las optimizaciones de flujo de gradiente de la versión 4 \cite{bochkovskiy2020yolov4optimalspeedaccuracy}.
+	\newline
+	
+	La red se estructura secuencialmente en tres etapas funcionales descritas en detalle en la literatura: Backbone (esqueleto), Neck (cuello) y Head (cabeza), cuyo análisis detallado se presenta a continuación basándose en el diagrama de la figura \ref{fig:yolo_vertical_start}.
+	\newline
+	
+	\subsubsection{Backbone: Extracción de Características}
+	El proceso comienza con una entrada estándar de $3 \times 640 \times 640$. No obstante, debido a que la red es FCN, es posible procesar imágenes de dimensiones variables ya que no existen capas densas que fijen el tamaño de entrada. Es relevante destacar también que aunque la arquitectura base está diseñada para imágenes RGB (3 canales), para la aplicación en imágenes térmicas se modifica la primera capa convolucional. Al ajustar la capa de entrada de tres canales a uno, se adapta la red a la naturaleza monocanal de estas imágenes para así reducir la redundancia en las operaciones.
+	\newline	
+	
+	La primera etapa de procesamiento es realizada por la capa convolucional $W_1$, que reduce la resolución espacial inicial para disminuir el coste computacional. A diferencia de las topologías secuenciales clásicas como Darknet-19 o Darknet-53 \cite{redmon2016yolo9000betterfasterstronger}  \cite{redmon2018yolov3incrementalimprovement}, que se basan en el apilamiento lineal de capas convolucionales y max-pooling siguiendo el paradigma convencional visto en clase, el esqueleto propuesto integra bloques C3-k.
+	\newline
+	
+	Esta estructura, introducida en el artículo de YOLOv4 \cite{bochkovskiy2020yolov4optimalspeedaccuracy}, divide el flujo de características en dos ramas para evitar el cálculo redundante de gradientes, así como estabilizarlos mediante las ramas residuales. Como se observa en el diagrama, los bloques C3-1, C3-2 y C3-3 actúan como extractores profundos, permitiendo que la red aprenda características complejas sin saturar el flujo de retropropagación. El backbone finaliza con el módulo SPPF diseñado para separar las características de contexto más importantes antes de ingresar al cuello de la red.
+	
+	\subsubsection{Neck: Fusión de Escalas} La sección intermedia o Neck es la responsable de la detección multiescala. Tal y como se introdujo en YOLOv3 \cite{redmon2018yolov3incrementalimprovement}, es fundamental realizar predicciones en diferentes escalas para detectar eficazmente tanto objetos pequeños como grandes. Sin embargo, la arquitectura de la Figura \ref{fig:yolo_vertical_start} mejora la propuesta original de la versión 3 implementando una estructura PANet (Path Aggregation Network) mediante los bloques CSP, característica clave adoptada desde YOLOv4 \cite{bochkovskiy2020yolov4optimalspeedaccuracy}.
+	\newline
+	
+	El diagrama muestra explícitamente este flujo bidireccional:
+	\begin{enumerate}
+		\item \textbf{Ruta Descendente:} Los mapas de características profundos (con muchas características pero con baja resolución espacial) provenientes de $W_2$ se procesan y redimensionan (bloque Resize) para concatenarse con las capas previas del backbone.  Al concatenarse con las características previas del backbone, se dota a los mapas de alta resolución (encargados de detectar objetos pequeños) de la capacidad de contexto necesaria para clasificar correctamente.
+		\item \textbf{Ruta Ascendente:} Posteriormente, y de forma simétrica, se aprovecha que las capas de mayor resolución conservan muy bien los detalles de bordes y contornos. Esta información se envía hacia las capas de menor resolución a través de las convoluciones de reducción $W_4$ y $W_5$. El objetivo es afinar la precisión de las cajas delimitadoras, mejorando la localización incluso en las ramas que detectan objetos grandes.
+	\end{enumerate}
+	Esta estrategia de agregación de rutas garantiza que las tres salidas del cuello contengan una mezcla óptima de información contextual y espacial.
+	
+	\subsubsection{Head: Detección} Finalmente, las tres ramas resultantes alimentan a la Cabeza de Detección. Siguiendo el paradigma establecido en YOLOv2 \cite{redmon2016yolo9000betterfasterstronger}, la red no predice las cajas delimitadoras directamente desde cero, sino que ajusta desplazamientos sobre cajas de anclaje predefinidas.
+	\newline
+	
+	Como se observa en la parte inferior de la Figura \ref{fig:yolo_vertical_start}, el sistema genera tres salidas independientes, una estrategia consolidada en YOLOv3 \cite{redmon2018yolov3incrementalimprovement} para manejar la variación de tamaño de los objetos:
+	\begin{itemize}
+		\item La rama de la izquierda (alta resolución) se especializa en objetos pequeños.
+		\item La rama central (resolución media) detecta objetos medianos.
+		\item La rama de la derecha (baja resolución) se encarga de los objetos grandes.
+	\end{itemize}
+	
+	El tensor de salida final unificado ($1 \times 25200 \times 85$) es el resultado de aplanar y concatenar estas predicciones multiescala, permitiendo que el modelo mantenga la velocidad de inferencia en tiempo real característica de la familia YOLO \cite{redmon2016lookonceunifiedrealtime} mientras maximiza la precisión en diversas escalas.
+	
 	\begin{figure}[H] % [p] fuerza una página dedicada si es necesario
 		\centering
 		
@@ -1144,7 +1180,7 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 				% 5. HEAD (CABEZA DE SALIDA)
 				% ==========================================
 					% Caja grande que abarca todo el ancho relevante
-				\node [headblock, below=3.5cm of cv_cross, xshift=4.0cm, minimum width=15cm] (head) {Cabeza de Detección (Head)};
+				\node [headblock, below=3.5cm of cv_cross, xshift=4.0cm, minimum width=15cm] (head) {Cabeza de Detección};
 			
 				
 				% Flechas entrando
@@ -1175,12 +1211,16 @@ Para ello, el proceso comienza con la capa convolucional $W_1$, que reduce los c
 				font=\sffamily\scriptsize, align=left, anchor=north west, 
 				at={($(c3_2.south) + (5, 6.0)$)}] {
 					\textbf{Leyenda:}\\
-					 \textbf{CV}: Convolución \\
-					 \textbf{C3}: Módulo CSP Bottleneck\\
-					 \textbf{C3-k}:\\
-					\textbf{SPPF}: Pirámide Espacial (Pooling)\\
-					\textbf{CSP}: Módulo de Fusión (Neck)\\
-					\textbf{Resize}: Upsample / Redimensionado...
+					 \textbf{CV}: Capa de convolución. \\
+					 \textbf{C3-k}: Módulo CSPResNe(x)t o C3-k.\\
+					\textbf{SPPF}: Módulo SPFF.\\
+					\textbf{CSP}: Módulo de CSP o C3\\
+					\textbf{Resize}: Upsample / Redimensionado...\\
+					$W_{1}=\{32,3,6,6\}$: Capa convolucional de \\
+					$W_{2}=\{256,512,1,1\}$: Capa convolucional de \\
+					$W_{3}=\{128,256,1,1\}$: Capa convolucional de \\
+					$W_{4}=\{128,128,3,3\}$: Capa convolucional de \\
+					$W_{5}=\{256,256,3,3\}$: Capa convolucional de \\
 				};
 			\end{tikzpicture}
 		
