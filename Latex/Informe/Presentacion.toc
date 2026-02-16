@@ -1,9 +1,9 @@
 \babel@toc {spanish}{}\relax 
 \beamer@sectionintoc {1}{Introducción}{3}{0}{1}
-\beamer@sectionintoc {2}{Fundamentos de YOLO}{6}{0}{2}
-\beamer@subsectionintoc {2}{1}{Descripción de la Neurona}{6}{0}{2}
-\beamer@subsectionintoc {2}{2}{Topología de la Red}{10}{0}{2}
-\beamer@subsectionintoc {2}{3}{Entrenamiento de la Red e Hiperparámetros}{17}{0}{2}
-\beamer@sectionintoc {3}{Metodología}{23}{0}{3}
-\beamer@sectionintoc {4}{Resultados}{31}{0}{4}
-\beamer@sectionintoc {5}{Conclusión}{38}{0}{5}
+\beamer@sectionintoc {2}{Fundamentos de YOLO}{7}{0}{2}
+\beamer@subsectionintoc {2}{1}{Descripción de la Neurona}{7}{0}{2}
+\beamer@subsectionintoc {2}{2}{Topología de la Red}{11}{0}{2}
+\beamer@subsectionintoc {2}{3}{Entrenamiento de la Red e Hiperparámetros}{18}{0}{2}
+\beamer@sectionintoc {3}{Metodología}{24}{0}{3}
+\beamer@sectionintoc {4}{Resultados}{32}{0}{4}
+\beamer@sectionintoc {5}{Conclusión}{39}{0}{5}
